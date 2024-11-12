@@ -8,11 +8,22 @@
 </head>
 <body>
     <h1>EPUB to Text Converter</h1>
+
+    <!-- Step 1: 上传文件 -->
     <input type="file" id="fileInput" accept=".epub" />
-    <button onclick="convertToText()">Convert</button>
-    <pre id="output"></pre>
+    <button onclick="convertToText()">Upload & Convert</button>
+
+    <!-- Step 2: 显示转换完成信息 -->
+    <div id="status" style="display:none; color: green; margin-top: 10px;">
+        Conversion complete! Click below to download the text file.
+    </div>
+
+    <!-- Step 3: 提供下载按钮 -->
+    <button id="downloadBtn" style="display:none; margin-top: 10px;" onclick="downloadTextFile()">Download Text File</button>
 
     <script>
+        let fullText = '';
+
         async function convertToText() {
             const fileInput = document.getElementById('fileInput');
             if (!fileInput.files.length) {
@@ -24,37 +35,42 @@
             const reader = new FileReader();
 
             reader.onload = async function(event) {
-                const epubData = event.target.result;
+                try {
+                    const epubData = event.target.result;
+                    const book = ePub(epubData);
+                    fullText = '';
 
-                // 使用 EPUB.js 解析 EPUB 文件
-                const book = ePub(epubData);
-                let fullText = '';
+                    // Extract text from each chapter
+                    await book.loaded.spine.then(async (spine) => {
+                        for (const item of spine.items) {
+                            const text = await item.load(book.load.bind(book)).then((section) => {
+                                const parser = new DOMParser();
+                                const doc = parser.parseFromString(section.content, "text/html");
+                                return doc.body.innerText;
+                            });
+                            fullText += text + '\n\n';
+                        }
+                    });
 
-                // 遍历章节提取文本内容
-                await book.loaded.spine.then(async (spine) => {
-                    for (const item of spine.items) {
-                        const text = await item.load(book.load.bind(book)).then((section) => {
-                            const parser = new DOMParser();
-                            const doc = parser.parseFromString(section.content, "text/html");
-                            return doc.body.innerText;
-                        });
-                        fullText += text + '\n\n';
-                    }
-                });
+                    // Step 2: 显示转换完成的消息
+                    document.getElementById('status').style.display = 'block';
+                    document.getElementById('downloadBtn').style.display = 'inline-block';
 
-                // 显示结果并提供下载
-                document.getElementById('output').innerText = fullText;
-                downloadTextFile(fullText, 'output.txt');
+                } catch (error) {
+                    console.error("Error during EPUB parsing:", error);
+                    alert("Failed to convert EPUB file. Please check the console for details.");
+                }
             };
 
             reader.readAsArrayBuffer(file);
         }
 
-        function downloadTextFile(text, filename) {
-            const blob = new Blob([text], { type: 'text/plain' });
+        function downloadTextFile() {
+            // Step 3: 下载转换后的文件
+            const blob = new Blob([fullText], { type: 'text/plain' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
-            link.download = filename;
+            link.download = 'output.txt';
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
