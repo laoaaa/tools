@@ -4,22 +4,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EPUB to Text Converter</title>
-    <script src="jszip.min.js"></script> <!-- 确保 jszip.min.js 文件在本地 -->
-    <script src="epub.min.js"></script> <!-- 确保 epub.min.js 文件在本地 -->
+    <script src="jszip.min.js"></script> <!-- Make sure jszip.min.js is available locally -->
+    <script src="epub.min.js"></script> <!-- Make sure epub.min.js is available locally -->
 </head>
 <body>
     <h1>EPUB to Text Converter</h1>
 
-    <!-- Step 1: 上传文件 -->
+    <!-- Step 1: File Upload -->
     <input type="file" id="fileInput" accept=".epub" />
     <button onclick="convertToText()">Upload & Convert</button>
 
-    <!-- Step 2: 显示转换完成信息 -->
+    <!-- Loading Indicator -->
+    <div id="loading" style="display:none; color: blue; margin-top: 10px;">
+        Converting... Please wait.
+    </div>
+
+    <!-- Conversion Complete Message -->
     <div id="status" style="display:none; color: green; margin-top: 10px;">
         Conversion complete! Click below to download the text file.
     </div>
 
-    <!-- Step 3: 提供下载按钮 -->
+    <!-- Download Button -->
     <button id="downloadBtn" style="display:none; margin-top: 10px;" onclick="downloadTextFile()">Download Text File</button>
 
     <script>
@@ -37,13 +42,16 @@
 
             reader.onload = async function(event) {
                 try {
-                    // 使用 ArrayBuffer 数据创建 ePub 实例
+                    // Show loading indicator
+                    document.getElementById('loading').style.display = 'block';
+
+                    // Create ePub instance with ArrayBuffer data
                     const epubData = event.target.result;
-                    const book = ePub(epubData);  // 直接传入 ArrayBuffer 而非 URL
+                    const book = ePub(epubData);
 
                     fullText = '';
 
-                    // 遍历所有章节并提取文本
+                    // Extract text from each chapter
                     book.loaded.spine.then(async (spine) => {
                         for (let item of spine.items) {
                             const content = await item.getContent();
@@ -52,20 +60,23 @@
                             fullText += doc.body.innerText + '\n\n';
                         }
 
-                        // Step 2: 显示转换完成的消息
+                        // Hide loading indicator and show completion message
+                        document.getElementById('loading').style.display = 'none';
                         document.getElementById('status').style.display = 'block';
                         document.getElementById('downloadBtn').style.display = 'inline-block';
                     }).catch(error => {
                         console.error("Error during EPUB parsing:", error);
                         alert("Failed to convert EPUB file. Please check the console for details.");
+                        document.getElementById('loading').style.display = 'none';
                     });
                 } catch (error) {
                     console.error("Error during EPUB parsing:", error);
                     alert("Failed to convert EPUB file. Please check the console for details.");
+                    document.getElementById('loading').style.display = 'none';
                 }
             };
 
-            reader.readAsArrayBuffer(file);  // 读取文件为 ArrayBuffer
+            reader.readAsArrayBuffer(file);  // Read file as ArrayBuffer
         }
 
         function downloadTextFile() {
@@ -74,7 +85,7 @@
                 return;
             }
 
-            // Step 3: 下载转换后的文件
+            // Download the converted file
             const blob = new Blob([fullText], { type: 'text/plain' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
