@@ -47,9 +47,8 @@
                     await book.ready;
 
                     // 遍历章节并提取内容
-                    for (let i = 0; i < book.spine.spineItems.length; i++) {
-                        const section = await book.spine.get(i).load(book.load.bind(book));
-                        const content = section.render();
+                    for (let section of book.spine) {
+                        const content = await section.render();
 
                         // 解析 HTML 内容并提取文本
                         const parser = new DOMParser();
