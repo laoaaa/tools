@@ -52,26 +52,20 @@
                     fullText = '';
 
                     // Extract text from each chapter
-                    book.loaded.spine.then(async (spine) => {
-                        for (let item of spine.items) {
-                            // Load each chapter's content
-                            const content = await item.load(book.archive);
+                    const spine = await book.loaded.spine;
+                    for (let item of spine.items) {
+                        const chapter = await item.load(book.archive);  // Load each chapter content
 
-                            // Use DOMParser to extract text content
-                            const parser = new DOMParser();
-                            const doc = parser.parseFromString(content, "text/html");
-                            fullText += doc.body.innerText + '\n\n';
-                        }
+                        // Use DOMParser to extract text content
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(chapter, "text/html");
+                        fullText += doc.body.innerText + '\n\n';
+                    }
 
-                        // Hide loading indicator and show completion message
-                        document.getElementById('loading').style.display = 'none';
-                        document.getElementById('status').style.display = 'block';
-                        document.getElementById('downloadBtn').style.display = 'inline-block';
-                    }).catch(error => {
-                        console.error("Error during EPUB parsing:", error);
-                        alert("Failed to convert EPUB file. Please check the console for details.");
-                        document.getElementById('loading').style.display = 'none';
-                    });
+                    // Hide loading indicator and show completion message
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('status').style.display = 'block';
+                    document.getElementById('downloadBtn').style.display = 'inline-block';
                 } catch (error) {
                     console.error("Error during EPUB parsing:", error);
                     alert("Failed to convert EPUB file. Please check the console for details.");
