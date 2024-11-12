@@ -1,0 +1,37 @@
+/* styles.css */
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background-color: #1a1a1a; /* 深色背景 */
+}
+
+.shishi-odoshi {
+    width: 600px; /* 容器宽度 */
+    height: 100px; /* 容器高度 */
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transform: translateY(100px); /* 向下移动，使竹管位于页面偏下位置 */
+}
+
+.bamboo {
+    width: 400px; /* 竹管长度增加一倍 */
+    height: 8px; /* 竹管宽度 */
+    background-color: #fff; /* 白色竹管 */
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%); /* 确保水平居中 */
+    transform-origin: center; /* 轴心在竹管中心 */
+    animation: fillAndTilt 50s infinite; /* 每50秒完成一次填水和回弹 */
+}
+
+@keyframes fillAndTilt {
+    0% { transform: translateX(-50%) rotate(-20deg); }          /* 初始状态：左端高于水平线20度 */
+    92% { transform: translateX(-50%) rotate(30deg); }          /* 缓慢下沉至左端低30度 */
+    95% { transform: translateX(-50%) rotate(-20deg); }         /* 立即回弹至初始状态 */
+    100% { transform: translateX(-50%) rotate(-20deg); }        /* 保持初始状态 */
+}
