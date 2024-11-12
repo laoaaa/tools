@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EPUB to Text Converter</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/epub.js/0.3.88/epub.min.js"></script>
+</head>
+<body>
+    <h1>EPUB to Text Converter</h1>
+    <input type="file" id="fileInput" accept=".epub" />
+    <button onclick="convertToText()">Convert</button>
+    <pre id="output"></pre>
+
+    <script>
+        async function convertToText() {
+            const fileInput = document.getElementById('fileInput');
+            if (!fileInput.files.length) {
+                alert('Please select an EPUB file!');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = async function(event) {
+                const epubData = event.target.result;
+
+                // 使用 EPUB.js 解析 EPUB 文件
+                const book = ePub(epubData);
+                let fullText = '';
+
+                // 遍历章节提取文本内容
+                await book.loaded.spine.then(async (spine) => {
+                    for (const item of spine.items) {
+                        const text = await item.load(book.load.bind(book)).then((section) => {
+                            const parser = new DOMParser();
+                            const doc = parser.parseFromString(section.content, "text/html");
+                            return doc.body.innerText;
+                        });
+                        fullText += text + '\n\n';
+                    }
+                });
+
+                // 显示结果并提供下载
+                document.getElementById('output').innerText = fullText;
+                downloadTextFile(fullText, 'output.txt');
+            };
+
+            reader.readAsArrayBuffer(file);
+        }
+
+        function downloadTextFile(text, filename) {
+            const blob = new Blob([text], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
