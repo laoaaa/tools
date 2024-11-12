@@ -45,17 +45,15 @@
 
                     // 等待书加载完成
                     await book.ready;
-                    const spineItems = book.spine.spineItems;
 
                     // 遍历章节并提取内容
-                    for (let item of spineItems) {
-                        const content = await item.getContent();
-                        const decoder = new TextDecoder("utf-8");
-                        const decodedContent = decoder.decode(content);
-                        
+                    for (let i = 0; i < book.spine.spineItems.length; i++) {
+                        const section = await book.spine.get(i).load(book.load.bind(book));
+                        const content = section.render();
+
                         // 解析 HTML 内容并提取文本
                         const parser = new DOMParser();
-                        const doc = parser.parseFromString(decodedContent, "text/html");
+                        const doc = parser.parseFromString(content, "text/html");
                         fullText += doc.body.innerText + '\n\n';
                     }
 
