@@ -44,15 +44,13 @@
                     fullText = '';
 
                     // Extract text from each chapter
-                    await book.loaded.spine.then(async (spine) => {
-                        for (const item of spine.items) {
-                            const text = await item.load(book.load.bind(book)).then((section) => {
-                                const parser = new DOMParser();
-                                const doc = parser.parseFromString(section.content, "text/html");
-                                return doc.body.innerText;
-                            });
-                            fullText += text + '\n\n';
-                        }
+                    await book.ready.then(() => {
+                        book.spine.spineItems.forEach(async (item) => {
+                            const content = await item.getContent();
+                            const parser = new DOMParser();
+                            const doc = parser.parseFromString(content, "text/html");
+                            fullText += doc.body.innerText + '\n\n';
+                        });
                     });
 
                     // Step 2: 显示转换完成的消息
