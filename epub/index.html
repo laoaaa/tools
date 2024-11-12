@@ -54,9 +54,12 @@
                     // Extract text from each chapter
                     book.loaded.spine.then(async (spine) => {
                         for (let item of spine.items) {
-                            const content = await item.getContent();
+                            // Render each chapter's content
+                            const rendition = await item.render();
+
+                            // Use DOMParser to extract text content
                             const parser = new DOMParser();
-                            const doc = parser.parseFromString(content, "text/html");
+                            const doc = parser.parseFromString(rendition.contents, "text/html");
                             fullText += doc.body.innerText + '\n\n';
                         }
 
