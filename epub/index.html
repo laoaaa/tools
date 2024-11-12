@@ -4,10 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EPUB to Text Converter</title>
-    <!-- 加载 JSZip -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
-    <!-- 加载 EPUB.js -->
-    <script src="https://unpkg.com/epubjs@0.3.88/dist/epub.min.js"></script>
+    <script src="jszip.min.js"></script> <!-- 确保 jszip.min.js 文件在本地 -->
+    <script src="epub.min.js"></script> <!-- 确保 epub.min.js 文件在本地 -->
 </head>
 <body>
     <h1>EPUB to Text Converter</h1>
@@ -15,9 +13,6 @@
     <!-- Step 1: 上传文件 -->
     <input type="file" id="fileInput" accept=".epub" />
     <button onclick="convertToText()">Upload & Convert</button>
-
-    <!-- 用于渲染 EPUB 内容的区域 -->
-    <div id="area" style="display:none;"></div>
 
     <!-- Step 2: 显示转换完成信息 -->
     <div id="status" style="display:none; color: green; margin-top: 10px;">
@@ -38,36 +33,31 @@
             }
 
             const file = fileInput.files[0];
-            const reader = new FileReader();
+            const url = URL.createObjectURL(file);
+            fullText = '';
 
-            reader.onload = async function(event) {
-                try {
-                    // 使用 FileReader 读取的 ArrayBuffer 数据创建 ePub 实例
-                    const epubData = event.target.result;
-                    const book = ePub(epubData);  // 直接传入 ArrayBuffer
+            // 创建 ePub 对象
+            const book = ePub(url);
 
-                    fullText = '';
-
-                    // 渲染章节内容
-                    const rendition = book.renderTo("area", { width: 600, height: 400 });
-                    rendition.display().then(() => {
-                        const area = document.getElementById("area");
-                        fullText = area.innerText;
-
-                        // Step 2: 显示转换完成的消息
-                        document.getElementById('status').style.display = 'block';
-                        document.getElementById('downloadBtn').style.display = 'inline-block';
-                    }).catch(error => {
-                        console.error("Error during EPUB parsing:", error);
-                        alert("Failed to convert EPUB file. Please check the console for details.");
-                    });
-                } catch (error) {
-                    console.error("Error during EPUB parsing:", error);
-                    alert("Failed to convert EPUB file. Please check the console for details.");
+            // 遍历所有章节并提取文本
+            book.loaded.spine.then(async (spine) => {
+                for (let item of spine.items) {
+                    const content = await item.getContent(); // 使用 getContent() 方法获取章节内容
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(content, "text/html");
+                    fullText += doc.body.innerText + '\n\n';
                 }
-            };
 
-            reader.readAsArrayBuffer(file);
+                // Step 2: 显示转换完成的消息
+                document.getElementById('status').style.display = 'block';
+                document.getElementById('downloadBtn').style.display = 'inline-block';
+                
+                // 清除对象 URL
+                URL.revokeObjectURL(url);
+            }).catch(error => {
+                console.error("Error during EPUB parsing:", error);
+                alert("Failed to convert EPUB file. Please check the console for details.");
+            });
         }
 
         function downloadTextFile() {
