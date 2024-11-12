@@ -43,15 +43,21 @@
                     const book = ePub(epubData);
                     fullText = '';
 
-                    // Extract text from each chapter
-                    await book.ready.then(() => {
-                        book.spine.spineItems.forEach(async (item) => {
-                            const content = await item.getContent();
-                            const parser = new DOMParser();
-                            const doc = parser.parseFromString(content, "text/html");
-                            fullText += doc.body.innerText + '\n\n';
-                        });
-                    });
+                    // 等待书加载完成
+                    await book.ready;
+                    const spineItems = book.spine.spineItems;
+
+                    // 遍历章节并提取内容
+                    for (let item of spineItems) {
+                        const content = await item.getContent();
+                        const decoder = new TextDecoder("utf-8");
+                        const decodedContent = decoder.decode(content);
+                        
+                        // 解析 HTML 内容并提取文本
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(decodedContent, "text/html");
+                        fullText += doc.body.innerText + '\n\n';
+                    }
 
                     // Step 2: 显示转换完成的消息
                     document.getElementById('status').style.display = 'block';
