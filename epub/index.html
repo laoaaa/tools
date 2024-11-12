@@ -16,6 +16,9 @@
     <input type="file" id="fileInput" accept=".epub" />
     <button onclick="convertToText()">Upload & Convert</button>
 
+    <!-- 用于渲染 EPUB 内容的区域 -->
+    <div id="area" style="display:none;"></div>
+
     <!-- Step 2: 显示转换完成信息 -->
     <div id="status" style="display:none; color: green; margin-top: 10px;">
         Conversion complete! Click below to download the text file.
@@ -35,38 +38,29 @@
             }
 
             const file = fileInput.files[0];
-            const reader = new FileReader();
+            const url = URL.createObjectURL(file);
+            fullText = '';
 
-            reader.onload = async function(event) {
-                try {
-                    const epubData = event.target.result;
-                    const book = ePub(epubData);
-                    fullText = '';
+            // 创建 ePub 对象并渲染
+            const book = ePub(url);
+            const rendition = book.renderTo("area", { width: 600, height: 400 });
+            
+            // 显示第一页并提取文本
+            rendition.display().then(() => {
+                // 提取渲染区域的文本
+                const area = document.getElementById("area");
+                fullText = area.innerText;
 
-                    // 等待书加载完成
-                    await book.ready;
-
-                    // 遍历章节并提取内容
-                    for (let section of book.spine) {
-                        const content = await section.render();
-
-                        // 解析 HTML 内容并提取文本
-                        const parser = new DOMParser();
-                        const doc = parser.parseFromString(content, "text/html");
-                        fullText += doc.body.innerText + '\n\n';
-                    }
-
-                    // Step 2: 显示转换完成的消息
-                    document.getElementById('status').style.display = 'block';
-                    document.getElementById('downloadBtn').style.display = 'inline-block';
-
-                } catch (error) {
-                    console.error("Error during EPUB parsing:", error);
-                    alert("Failed to convert EPUB file. Please check the console for details.");
-                }
-            };
-
-            reader.readAsArrayBuffer(file);
+                // Step 2: 显示转换完成的消息
+                document.getElementById('status').style.display = 'block';
+                document.getElementById('downloadBtn').style.display = 'inline-block';
+                
+                // 清除渲染的内容
+                URL.revokeObjectURL(url);
+            }).catch(error => {
+                console.error("Error during EPUB parsing:", error);
+                alert("Failed to convert EPUB file. Please check the console for details.");
+            });
         }
 
         function downloadTextFile() {
