@@ -42,10 +42,23 @@
             // 遍历所有章节并提取文本
             book.loaded.spine.then(async (spine) => {
                 for (let item of spine.items) {
-                    const content = await item.getContent(); // 使用 getContent() 方法获取章节内容
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(content, "text/html");
-                    fullText += doc.body.innerText + '\n\n';
+                    try {
+                        const content = await item.getContent(); // 使用 getContent() 方法获取章节内容
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(content, "text/html");
+                        const chapterText = doc.body.innerText.trim();
+                        console.log("Extracted text from chapter:", chapterText); // 输出每章的文本内容到控制台
+                        fullText += chapterText + '\n\n';
+                    } catch (error) {
+                        console.error("Error loading chapter content:", error);
+                    }
+                }
+
+                // 检查 fullText 是否为空
+                if (fullText.trim() === '') {
+                    console.warn("No text extracted from the EPUB. Please check the EPUB structure.");
+                    alert("Failed to extract text from EPUB file. It may be empty or in an unsupported format.");
+                    return;
                 }
 
                 // Step 2: 显示转换完成的消息
@@ -61,6 +74,11 @@
         }
 
         function downloadTextFile() {
+            if (!fullText) {
+                alert("No content to download. Please check the EPUB file.");
+                return;
+            }
+
             // Step 3: 下载转换后的文件
             const blob = new Blob([fullText], { type: 'text/plain' });
             const link = document.createElement('a');
