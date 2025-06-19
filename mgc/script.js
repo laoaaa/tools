@@ -8,7 +8,7 @@ let isForbiddenWordsLoaded = false;
 
 async function loadForbiddenWords() {
     try {
-        console.log('正在加载限制词库...');
+        console.log('正在加载词库...');
         const response = await fetch('forbidden_words.json');
         if (!response.ok) {
             throw new Error(`HTTP错误！状态：${response.status}`);
@@ -16,18 +16,18 @@ async function loadForbiddenWords() {
         const data = await response.json();
         forbiddenWords = data.words || [];
         isForbiddenWordsLoaded = true;
-        console.log('加载的限制词库:', forbiddenWords);
-        document.getElementById('loadStatus').textContent = '已加载限制词库';
+        console.log('加载的词库:', forbiddenWords);
+        document.getElementById('loadStatus').textContent = '已加载词库';
     } catch (error) {
-        console.error('加载限制词库失败:', error);
-        alert('加载限制词库失败，请稍后再试。');
-        document.getElementById('loadStatus').textContent = '限制词库加载失败。';
+        console.error('加载词库失败:', error);
+        alert('加载词库失败，请稍后再试。');
+        document.getElementById('loadStatus').textContent = '词库加载失败。';
     }
 }
 
 function checkForbiddenWords() {
     if (!isForbiddenWordsLoaded) {
-        alert('限制词库尚未加载，请稍后再试。');
+        alert('词库尚未加载，请稍后再试。');
         return;
     }
 
