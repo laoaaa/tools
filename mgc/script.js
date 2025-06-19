@@ -8,7 +8,7 @@ let isForbiddenWordsLoaded = false;
 
 async function loadForbiddenWords() {
     try {
-        console.log('正在加载违禁词列表...');
+        console.log('正在加载限制词库...');
         const response = await fetch('forbidden_words.json');
         if (!response.ok) {
             throw new Error(`HTTP错误！状态：${response.status}`);
@@ -16,18 +16,18 @@ async function loadForbiddenWords() {
         const data = await response.json();
         forbiddenWords = data.words || [];
         isForbiddenWordsLoaded = true;
-        console.log('加载的违禁词列表:', forbiddenWords);
-        document.getElementById('loadStatus').textContent = '已加载违禁词/极限词/内容风险词库';
+        console.log('加载的限制词库:', forbiddenWords);
+        document.getElementById('loadStatus').textContent = '已加载违禁词/极限词/内容导向风险词库';
     } catch (error) {
-        console.error('加载违禁词列表失败:', error);
-        alert('加载违禁词列表失败，请稍后再试。');
-        document.getElementById('loadStatus').textContent = '违禁词列表加载失败。';
+        console.error('加载限制词库失败:', error);
+        alert('加载限制词库失败，请稍后再试。');
+        document.getElementById('loadStatus').textContent = '限制词库加载失败。';
     }
 }
 
 function checkForbiddenWords() {
     if (!isForbiddenWordsLoaded) {
-        alert('违禁词列表尚未加载，请稍后再试。');
+        alert('限制词库尚未加载，请稍后再试。');
         return;
     }
 
@@ -38,7 +38,7 @@ function checkForbiddenWords() {
 
     forbiddenWords.forEach(word => {
         const regex = new RegExp(`${escapeRegExp(word)}`, 'gi');
-        console.log('检查的违禁词:', word);
+        console.log('检查的极限词/违禁词:', word);
         if (regex.test(textInput)) {
             detectedWords.add(word);
             resultHTML = resultHTML.replace(regex, `<span class="highlight">${word}</span>`);
@@ -61,10 +61,10 @@ function displayDetectedWords(detectedWords) {
             wordList.appendChild(listItem);
         });
         detectedWordsDiv.style.display = 'block';
-        detectedWordsDiv.querySelector('.note').textContent = '提示：请避免使用以上检测到的违禁词。';
+        detectedWordsDiv.querySelector('.note').textContent = '检测到的极限词/违禁词/内容导向风险。';
     } else {
         detectedWordsDiv.style.display = 'block';
-        detectedWordsDiv.querySelector('.note').textContent = '未检测到违禁词。';
+        detectedWordsDiv.querySelector('.note').textContent = '未检测到极限词/违禁词/内容导向风险。';
     }
 }
 
