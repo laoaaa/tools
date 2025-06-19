@@ -38,7 +38,7 @@ function checkForbiddenWords() {
 
     forbiddenWords.forEach(word => {
         const regex = new RegExp(`${escapeRegExp(word)}`, 'gi');
-        console.log('检查的极限词/违禁词:', word);
+        console.log('检索的极限词/违禁词:', word);
         if (regex.test(textInput)) {
             detectedWords.add(word);
             resultHTML = resultHTML.replace(regex, `<span class="highlight">${word}</span>`);
@@ -61,10 +61,10 @@ function displayDetectedWords(detectedWords) {
             wordList.appendChild(listItem);
         });
         detectedWordsDiv.style.display = 'block';
-        detectedWordsDiv.querySelector('.note').textContent = '检测到的极限词/违禁词/内容导向风险。';
+        detectedWordsDiv.querySelector('.note').textContent = '检索到的极限词/违禁词/内容导向风险。';
     } else {
         detectedWordsDiv.style.display = 'block';
-        detectedWordsDiv.querySelector('.note').textContent = '未检测到极限词/违禁词/内容导向风险。';
+        detectedWordsDiv.querySelector('.note').textContent = '未检索到极限词/违禁词/内容导向风险。';
     }
 }
 
