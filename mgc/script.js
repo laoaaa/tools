@@ -17,7 +17,7 @@ async function loadForbiddenWords() {
         forbiddenWords = data.words || [];
         isForbiddenWordsLoaded = true;
         console.log('加载的限制词库:', forbiddenWords);
-        document.getElementById('loadStatus').textContent = '已加载违禁词/极限词/内容导向风险词库';
+        document.getElementById('loadStatus').textContent = '已加载限制词库';
     } catch (error) {
         console.error('加载限制词库失败:', error);
         alert('加载限制词库失败，请稍后再试。');
@@ -38,7 +38,7 @@ function checkForbiddenWords() {
 
     forbiddenWords.forEach(word => {
         const regex = new RegExp(`${escapeRegExp(word)}`, 'gi');
-        console.log('检索的极限词/违禁词:', word);
+        console.log('检索的限制词:', word);
         if (regex.test(textInput)) {
             detectedWords.add(word);
             resultHTML = resultHTML.replace(regex, `<span class="highlight">${word}</span>`);
@@ -64,7 +64,7 @@ function displayDetectedWords(detectedWords) {
         detectedWordsDiv.querySelector('.note').textContent = '注意：以上字词可能触发平台的监控限制。';
     } else {
         detectedWordsDiv.style.display = 'block';
-        detectedWordsDiv.querySelector('.note').textContent = '未检索到极限词/违禁词/内容导向风险。';
+        detectedWordsDiv.querySelector('.note').textContent = '未检索到限制词。';
     }
 }
 
