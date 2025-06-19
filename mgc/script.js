@@ -17,7 +17,7 @@ async function loadForbiddenWords() {
         forbiddenWords = data.words || [];
         isForbiddenWordsLoaded = true;
         console.log('加载的违禁词列表:', forbiddenWords);
-        document.getElementById('loadStatus').textContent = '已加载违禁词列表/已加载极限词列表/已加载内容风险词库';
+        document.getElementById('loadStatus').textContent = '已加载违禁词/极限词/内容风险词库';
     } catch (error) {
         console.error('加载违禁词列表失败:', error);
         alert('加载违禁词列表失败，请稍后再试。');
