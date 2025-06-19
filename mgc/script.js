@@ -61,7 +61,7 @@ function displayDetectedWords(detectedWords) {
             wordList.appendChild(listItem);
         });
         detectedWordsDiv.style.display = 'block';
-        detectedWordsDiv.querySelector('.note').textContent = '检索到的极限词/违禁词/内容导向风险。';
+        detectedWordsDiv.querySelector('.note').textContent = '注意：以上字词可能触发平台的监控限制。';
     } else {
         detectedWordsDiv.style.display = 'block';
         detectedWordsDiv.querySelector('.note').textContent = '未检索到极限词/违禁词/内容导向风险。';
