@@ -316,7 +316,7 @@ document.addEventListener('DOMContentLoaded', () => {
         resultContent.innerHTML = html;
         
         // 渲染LaTeX公式
-        //renderMathInElement(resultContent, {
+        renderMathInElement(resultContent, {
             delimiters: [
                 {left: '$$', right: '$$', display: true},
                 {left: '$', right: '$', display: false}
