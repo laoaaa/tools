@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>国产大模型流式测试工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+
+    <style>
+        body { font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "微软雅黑", Arial, sans-serif; }
+        .chat-container { height: calc(100vh - 220px); }
+        .markdown-body { font-size: 16px; line-height: 1.6; }
+        .markdown-body pre { background: #1e1e1e; padding: 1rem; border-radius: 0.5rem; margin: 0.5rem 0; overflow-x: auto; }
+        .thinking-block { background-color: #f0f7ff; border-left: 4px solid #3b82f6; padding: 0.75rem; margin-bottom: 1rem; font-size: 0.85rem; color: #4b5563; border-radius: 4px; }
+        .img-preview { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; border: 1px solid #e5e7eb; }
+        
+        /* 动态思考动画 */
+        .dot-flashing { display: inline-flex; align-items: center; gap: 4px; }
+        .dot-flashing span { width: 6px; height: 6px; border-radius: 50%; background-color: #3b82f6; animation: dot-flashing 1.4s infinite linear; opacity: 0.2; }
+        .dot-flashing span:nth-child(2) { animation-delay: 0.2s; }
+        .dot-flashing span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes dot-flashing {
+            0% { opacity: 0.2; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.1); }
+            100% { opacity: 0.2; transform: scale(1); }
+        }
+        
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-900 font-sans">
+
+<div class="flex h-screen overflow-hidden">
+    <aside class="w-80 bg-white border-r p-6 overflow-y-auto shrink-0 shadow-xl z-10">
+        <h2 class="text-2xl font-black mb-6 text-blue-600 italic tracking-tighter">AI TESTER</h2>
+        
+        <div class="space-y-4 text-sm">
+            <div>
+                <label class="block font-bold mb-1">1. 模型供应商</label>
+                <select id="provider" class="w-full border rounded-lg px-3 py-2 bg-gray-50 focus:ring-2 focus:ring-blue-400 outline-none" onchange="applyPreset()">
+                    <option value="deepseek">DeepSeek</option>
+                    <option value="qwen">通义千问 (Qwen)</option>
+                    <option value="kimi">Kimi (Moonshot)</option>
+                    <option value="glm">智谱清言 (GLM)</option>
+                    <option value="doubao">豆包 (Doubao)</option>
+                    <option value="hunyuan">腾讯混元 (Hunyuan)</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block font-bold mb-1">2. API Key</label>
+                <input id="apiKey" type="password" placeholder="sk-..." class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none">
+            </div>
+
+            <div>
+                <label class="block font-bold mb-1 text-orange-600 text-[10px] uppercase">CORS Proxy (GitHub部署必填)</label>
+                <input id="proxyUrl" type="text" placeholder="https://your-proxy.workers.dev/" class="w-full border rounded-lg px-3 py-2 text-xs bg-orange-50 outline-none focus:border-orange-400">
+            </div>
+
+            <hr class="my-4">
+
+            <div class="space-y-3">
+                <label class="block font-bold tracking-tight">3. 参数微调</label>
+                <div>
+                    <span class="text-[10px] text-gray-400 uppercase">Endpoint / Model ID</span>
+                    <input id="endpoint" type="text" class="w-full border rounded px-3 py-1.5 text-xs mb-1 bg-gray-50">
+                    <input id="modelId" type="text" class="w-full border rounded px-3 py-1.5 text-xs bg-gray-50">
+                </div>
+                
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <span class="text-[10px] text-gray-400 uppercase">Temperature</span>
+                        <input id="temperature" type="number" step="0.1" value="0.7" class="w-full border rounded px-3 py-1.5">
+                    </div>
+                    <div>
+                        <span class="text-[10px] text-gray-400 uppercase">Top-P</span>
+                        <input id="topP" type="number" step="0.1" value="1.0" class="w-full border rounded px-3 py-1.5">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <span class="text-[10px] text-gray-400 uppercase">Max Token</span>
+                        <input id="maxTokens" type="number" value="4096" class="w-full border rounded px-3 py-1.5">
+                    </div>
+                    <div>
+                        <span class="text-[10px] text-gray-400 uppercase">上下文轮数</span>
+                        <input id="contextCount" type="number" value="10" class="w-full border rounded px-3 py-1.5">
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 py-1">
+                    <input id="enableThinking" type="checkbox" checked class="w-4 h-4 text-blue-600">
+                    <label for="enableThinking" class="text-xs font-medium">解析思维链 (R1模型)</label>
+                </div>
+            </div>
+
+            <hr class="my-4">
+
+            <div>
+                <label class="block font-bold mb-1 text-blue-600 uppercase text-[10px]">System Prompt</label>
+                <textarea id="systemPrompt" rows="4" class="w-full border rounded-lg px-3 py-2 text-xs shadow-inner focus:border-blue-500 outline-none bg-gray-50" placeholder="设定AI的角色和规则..."></textarea>
+            </div>
+            
+            <button onclick="clearHistory()" class="w-full py-2 text-red-500 text-xs font-bold border border-red-200 rounded-lg hover:bg-red-50 transition">清空对话记录</button>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col bg-white">
+        <div id="chatHistory" class="chat-container overflow-y-auto p-6 space-y-6 flex-1 bg-white"></div>
+
+        <div id="filePreviewArea" class="px-6 flex gap-3 overflow-x-auto pb-2"></div>
+
+        <div class="p-4 border-t bg-gray-50 shadow-2xl">
+            <div class="max-w-4xl mx-auto">
+                <div class="flex items-center gap-4 mb-2">
+                    <button onclick="document.getElementById('fileInput').click()" class="flex items-center gap-1 text-gray-500 hover:text-blue-600 text-xs font-bold transition">
+                        <span class="text-lg">📄</span> 文档
+                    </button>
+                    <button onclick="document.getElementById('imageInput').click()" class="flex items-center gap-1 text-gray-500 hover:text-blue-600 text-xs font-bold transition">
+                        <span class="text-lg">🖼️</span> 图片
+                    </button>
+                    <input type="file" id="fileInput" class="hidden" accept=".txt,.doc,.docx" onchange="handleFileSelect(event)">
+                    <input type="file" id="imageInput" class="hidden" accept="image/*" multiple onchange="handleImageSelect(event)">
+                    <span id="uploadStatus" class="text-[10px] text-blue-500 font-bold"></span>
+                </div>
+                
+                <div class="relative">
+                    <textarea id="userInput" rows="3" class="w-full border-2 border-gray-200 rounded-2xl px-4 py-3 pr-24 shadow-sm focus:border-blue-500 outline-none resize-none transition-all" placeholder="输入消息... (Shift+Enter 换行)"></textarea>
+                    <button id="sendBtn" onclick="sendMessage()" class="absolute right-3 bottom-3 bg-blue-600 text-white px-5 py-2 rounded-xl font-bold hover:bg-blue-700 transition-all disabled:bg-gray-300">发送</button>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    const STORAGE_KEY = 'ai_stream_tester_config';
+    const presets = {
+        deepseek: { url: 'https://api.deepseek.com/v1', model: 'deepseek-chat' },
+        qwen: { url: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-max' },
+        kimi: { url: 'https://api.moonshot.cn/v1', model: 'moonshot-v1-8k' },
+        glm: { url: 'https://open.bigmodel.cn/api/paas/v4', model: 'glm-4' },
+        doubao: { url: 'https://ark.cn-beijing.volces.com/api/v3', model: 'ep-换成你的推理端点' },
+        hunyuan: { url: 'https://api.hunyuan.cloud.tencent.com/v1', model: 'hunyuan-standard' }
+    };
+
+    let chatHistory = []; 
+    let selectedImages = []; 
+    let extractedFileText = ""; 
+
+    window.onload = () => {
+        loadSettings();
+        document.querySelectorAll('input, select, textarea').forEach(el => {
+            el.addEventListener('change', saveSettings);
+        });
+    };
+
+    function saveSettings() {
+        const config = {
+            provider: document.getElementById('provider').value,
+            apiKey: document.getElementById('apiKey').value,
+            proxyUrl: document.getElementById('proxyUrl').value,
+            endpoint: document.getElementById('endpoint').value,
+            modelId: document.getElementById('modelId').value,
+            temp: document.getElementById('temperature').value,
+            topP: document.getElementById('topP').value,
+            maxTokens: document.getElementById('maxTokens').value,
+            contextCount: document.getElementById('contextCount').value,
+            systemPrompt: document.getElementById('systemPrompt').value,
+            enableThinking: document.getElementById('enableThinking').checked
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+    }
+
+    function loadSettings() {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            const s = JSON.parse(saved);
+            Object.keys(s).forEach(key => {
+                const el = document.getElementById(key === 'temp' ? 'temperature' : key);
+                if (el) {
+                    if (el.type === 'checkbox') el.checked = s[key];
+                    else el.value = s[key];
+                }
+            });
+        } else {
+            applyPreset();
+        }
+    }
+
+    function applyPreset() {
+        const p = document.getElementById('provider').value;
+        document.getElementById('endpoint').value = presets[p].url;
+        document.getElementById('modelId').value = presets[p].model;
+        saveSettings();
+    }
+
+    // --- 动态显示控制 ---
+    function showTypingIndicator() {
+        const history = document.getElementById('chatHistory');
+        const wrapper = document.createElement('div');
+        wrapper.id = 'typing-indicator';
+        wrapper.className = 'flex justify-start';
+        wrapper.innerHTML = `
+            <div class="bg-gray-100 px-4 py-3 rounded-2xl flex items-center gap-3">
+                <div class="dot-flashing"><span></span><span></span><span></span></div>
+            </div>
+        `;
+        history.appendChild(wrapper);
+        history.scrollTop = history.scrollHeight;
+        return wrapper;
+    }
+
+    // --- 附件解析逻辑 ---
+    async function handleFileSelect(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        document.getElementById('uploadStatus').innerText = "读取中...";
+        if (file.name.endsWith('.docx')) {
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                const result = await mammoth.extractRawText({ arrayBuffer: event.target.result });
+                extractedFileText += `\n[文件:${file.name}]\n${result.value}\n`;
+                document.getElementById('uploadStatus').innerText = `已载入 Word: ${file.name}`;
+            };
+            reader.readAsArrayBuffer(file);
+        } else {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                extractedFileText += `\n[文件:${file.name}]\n${event.target.result}\n`;
+                document.getElementById('uploadStatus').innerText = `已载入文本: ${file.name}`;
+            };
+            reader.readAsText(file);
+        }
+    }
+
+    function handleImageSelect(e) {
+        Array.from(e.target.files).forEach(file => {
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                selectedImages.push(ev.target.result);
+                renderImagePreviews();
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function renderImagePreviews() {
+        const area = document.getElementById('filePreviewArea');
+        area.innerHTML = selectedImages.map((src, idx) => `
+            <div class="relative group shrink-0">
+                <img src="${src}" class="img-preview shadow-sm">
+                <button onclick="removeImg(${idx})" class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 text-[10px] flex items-center justify-center">×</button>
+            </div>
+        `).join('');
+    }
+
+    function removeImg(idx) { selectedImages.splice(idx, 1); renderImagePreviews(); }
+
+    // --- 核心流式对话 ---
+    async function sendMessage() {
+        const inputEl = document.getElementById('userInput');
+        const text = inputEl.value.trim();
+        if (!text && selectedImages.length === 0 && !extractedFileText) return;
+
+        saveSettings();
+        const apiKey = document.getElementById('apiKey').value;
+        if (!apiKey) return alert('请先配置 API Key');
+
+        let fullText = text;
+        if (extractedFileText) fullText = `[附件内容]\n${extractedFileText}\n\n[用户问题]\n${text}`;
+
+        appendMessageUI('user', text || "发送了附件");
+        inputEl.value = '';
+        const batchImages = [...selectedImages];
+        selectedImages = []; extractedFileText = ""; renderImagePreviews();
+        document.getElementById('uploadStatus').innerText = "";
+
+        const typingIndicator = showTypingIndicator();
+        const btn = document.getElementById('sendBtn');
+        btn.disabled = true;
+
+        // 创建流式输出的消息容器
+        const history = document.getElementById('chatHistory');
+        const aiWrapper = document.createElement('div');
+        aiWrapper.className = 'flex justify-start flex-col gap-2';
+        history.appendChild(aiWrapper);
+
+        let thinkingContent = "";
+        let finalContent = "";
+        
+        // 用于实时更新的 DOM 元素
+        let thinkingDiv = null;
+        let contentDiv = null;
+
+        try {
+            let url = document.getElementById('endpoint').value + '/chat/completions';
+            const proxy = document.getElementById('proxyUrl').value;
+            if (proxy) url = proxy + url;
+
+            const userContent = [{ type: "text", text: fullText }];
+            batchImages.forEach(img => userContent.push({ type: "image_url", image_url: { url: img } }));
+
+            const apiMsgs = [];
+            const system = document.getElementById('systemPrompt').value;
+            if (system) apiMsgs.push({ role: 'system', content: system });
+            const contextLimit = parseInt(document.getElementById('contextCount').value);
+            apiMsgs.push(...chatHistory.slice(-contextLimit), { role: 'user', content: userContent });
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+                body: JSON.stringify({
+                    model: document.getElementById('modelId').value,
+                    messages: apiMsgs,
+                    temperature: parseFloat(document.getElementById('temperature').value),
+                    max_tokens: parseInt(document.getElementById('maxTokens').value),
+                    stream: true // 开启流式
+                })
+            });
+
+            if (!response.ok) throw new Error(await response.text());
+
+            typingIndicator.remove(); // 收到响应，移除加载动画
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder("utf-8");
+            let buffer = "";
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split("\n");
+                buffer = lines.pop(); // 留下不完整的行
+
+                for (const line of lines) {
+                    const cleanLine = line.replace(/^data: /, "").trim();
+                    if (!cleanLine || cleanLine === "[DONE]") continue;
+
+                    try {
+                        const json = JSON.parse(cleanLine);
+                        const delta = json.choices[0].delta;
+
+                        // 1. 处理思维链 (reasoning_content)
+                        if (delta.reasoning_content && document.getElementById('enableThinking').checked) {
+                            if (!thinkingDiv) {
+                                thinkingDiv = document.createElement('div');
+                                thinkingDiv.className = 'thinking-block max-w-[85%]';
+                                aiWrapper.appendChild(thinkingDiv);
+                            }
+                            thinkingContent += delta.reasoning_content;
+                            thinkingDiv.innerHTML = `<strong>Thinking:</strong><br>${thinkingContent.replace(/\n/g, '<br>')}`;
+                            history.scrollTop = history.scrollHeight;
+                        }
+
+                        // 2. 处理正文 (content)
+                        if (delta.content) {
+                            if (!contentDiv) {
+                                contentDiv = document.createElement('div');
+                                contentDiv.className = 'max-w-[85%] px-4 py-3 rounded-2xl bg-gray-100 text-gray-800 markdown-body shadow-sm';
+                                aiWrapper.appendChild(contentDiv);
+                            }
+                            finalContent += delta.content;
+                            // 实时渲染 Markdown
+                            contentDiv.innerHTML = marked.parse(finalContent);
+                            history.scrollTop = history.scrollHeight;
+                        }
+                    } catch (e) { console.warn("解析行失败", e); }
+                }
+            }
+
+            // 完成后代码高亮
+            aiWrapper.querySelectorAll('pre code').forEach(hljs.highlightElement);
+            chatHistory.push({ role: 'user', content: fullText });
+            chatHistory.push({ role: 'assistant', content: finalContent });
+
+        } catch (e) {
+            typingIndicator.remove();
+            appendMessageUI('system', '❌ 错误: ' + e.message);
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    function appendMessageUI(role, content) {
+        const history = document.getElementById('chatHistory');
+        const wrap = document.createElement('div');
+        wrap.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+        const div = document.createElement('div');
+        div.className = `max-w-[85%] px-4 py-3 rounded-2xl shadow-sm ${
+            role === 'user' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-800'
+        } markdown-body`;
+        div.innerHTML = marked.parse(content);
+        wrap.appendChild(div);
+        history.appendChild(wrap);
+        history.scrollTop = history.scrollHeight;
+        div.querySelectorAll('pre code').forEach(hljs.highlightElement);
+    }
+
+    function clearHistory() {
+        chatHistory = [];
+        document.getElementById('chatHistory').innerHTML = '<div class="text-center text-xs text-gray-400">历史已清空</div>';
+    }
+
+    document.getElementById('userInput').addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    });
+</script>
+</body>
+</html>
