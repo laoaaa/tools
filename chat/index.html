@@ -11,7 +11,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 
     <style>
+        .body {font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "微软雅黑", Arial, sans-serif;}
         .chat-container { height: calc(100vh - 220px); }
+        .markdown-body {font-size: 16px; /* 默认通常是 14px 或 15px */line-height: 1.6; /* 调整行间距，提高阅读舒适度 */}
         .markdown-body pre { background: #1e1e1e; padding: 1rem; border-radius: 0.5rem; margin: 0.5rem 0; overflow-x: auto; }
         .thinking-block { background-color: #f0f7ff; border-left: 4px solid #3b82f6; padding: 0.75rem; margin-bottom: 1rem; font-size: 0.85rem; color: #4b5563; border-radius: 4px; }
         .img-preview { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; border: 1px solid #e5e7eb; }
@@ -57,7 +59,7 @@
             </div>
 
             <div>
-                <label class="block font-bold mb-1 text-orange-600 text-[10px] uppercase">CORS Proxy (解决跨域错误)</label>
+                <label class="block font-bold mb-1 text-orange-600 text-[10px] uppercase">CORS Proxy (国内IP用不到)</label>
                 <input id="proxyUrl" type="text" placeholder="https://your-proxy.workers.dev/" class="w-full border rounded-lg px-3 py-2 text-xs bg-orange-50 outline-none focus:border-orange-400">
             </div>
 
@@ -113,7 +115,7 @@
     <main class="flex-1 flex flex-col bg-white">
         <div id="chatHistory" class="chat-container overflow-y-auto p-6 space-y-6 flex-1 bg-white">
             <div class="flex justify-start">
-                <div class="bg-gray-100 px-4 py-2 rounded-2xl text-sm text-gray-600">麻烦先在左侧完成配置，然后开始对话。支持上传 Word/TXT 文档和多张图片，pdf不行。上下文轮数谨慎使用，token会超，而且很花钱。推理模型才能开推理，推理也很花钱。可以直接去用免费的。</div>
+                <div class="bg-gray-100 px-4 py-2 rounded-2xl text-sm text-gray-600">开局碎碎念：可以直接去用免费的。麻烦先在左侧完成配置，然后开始对话。支持上传 Word/TXT 文档和多张图片，pdf不行。上下文轮数谨慎使用，token会超，而且很花钱。推理模型才能开推理，推理也很花钱。可以直接去用免费的。</div>
             </div>
         </div>
 
@@ -123,7 +125,7 @@
             <div class="max-w-4xl mx-auto">
                 <div class="flex items-center gap-4 mb-2">
                     <button onclick="document.getElementById('fileInput').click()" class="flex items-center gap-1 text-gray-500 hover:text-blue-600 text-xs font-bold transition">
-                        <span class="text-lg">📄</span> word/txt文档
+                        <span class="text-lg">📄</span> word/txt
                     </button>
                     <button onclick="document.getElementById('imageInput').click()" class="flex items-center gap-1 text-gray-500 hover:text-blue-600 text-xs font-bold transition">
                         <span class="text-lg">🖼️</span> 图片
