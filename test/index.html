@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>国产大模型流式测试工具</title>
+    <title>国产大模型测试工具</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
@@ -37,7 +37,7 @@
 
 <div class="flex h-screen overflow-hidden">
     <aside class="w-80 bg-white border-r p-6 overflow-y-auto shrink-0 shadow-xl z-10">
-        <h2 class="text-2xl font-black mb-6 text-blue-600 italic tracking-tighter">AI TESTER</h2>
+        <h2 class="text-2xl font-black mb-6 text-blue-600 italic tracking-tighter">国产大模型测试工具</h2>
         
         <div class="space-y-4 text-sm">
             <div>
@@ -58,7 +58,7 @@
             </div>
 
             <div>
-                <label class="block font-bold mb-1 text-orange-600 text-[10px] uppercase">CORS Proxy (GitHub部署必填)</label>
+                <label class="block font-bold mb-1 text-orange-600 text-[10px] uppercase">CORS Proxy (国外用)</label>
                 <input id="proxyUrl" type="text" placeholder="https://your-proxy.workers.dev/" class="w-full border rounded-lg px-3 py-2 text-xs bg-orange-50 outline-none focus:border-orange-400">
             </div>
 
@@ -96,14 +96,14 @@
 
                 <div class="flex items-center gap-2 py-1">
                     <input id="enableThinking" type="checkbox" checked class="w-4 h-4 text-blue-600">
-                    <label for="enableThinking" class="text-xs font-medium">解析思维链 (R1模型)</label>
+                    <label for="enableThinking" class="text-xs font-medium">思考过程（deepseek-reasoner专用）</label>
                 </div>
             </div>
 
             <hr class="my-4">
 
             <div>
-                <label class="block font-bold mb-1 text-blue-600 uppercase text-[10px]">System Prompt</label>
+                <label class="block font-bold mb-1 text-blue-600 uppercase text-[10px]">系统提示词</label>
                 <textarea id="systemPrompt" rows="4" class="w-full border rounded-lg px-3 py-2 text-xs shadow-inner focus:border-blue-500 outline-none bg-gray-50" placeholder="设定AI的角色和规则..."></textarea>
             </div>
             
@@ -120,10 +120,10 @@
             <div class="max-w-4xl mx-auto">
                 <div class="flex items-center gap-4 mb-2">
                     <button onclick="document.getElementById('fileInput').click()" class="flex items-center gap-1 text-gray-500 hover:text-blue-600 text-xs font-bold transition">
-                        <span class="text-lg">📄</span> 文档
+                        <span class="text-lg">📄</span> 上传word/txt
                     </button>
                     <button onclick="document.getElementById('imageInput').click()" class="flex items-center gap-1 text-gray-500 hover:text-blue-600 text-xs font-bold transition">
-                        <span class="text-lg">🖼️</span> 图片
+                        <span class="text-lg">🖼️</span> 上传图片
                     </button>
                     <input type="file" id="fileInput" class="hidden" accept=".txt,.doc,.docx" onchange="handleFileSelect(event)">
                     <input type="file" id="imageInput" class="hidden" accept="image/*" multiple onchange="handleImageSelect(event)">
@@ -143,10 +143,10 @@
     const STORAGE_KEY = 'ai_stream_tester_config';
     const presets = {
         deepseek: { url: 'https://api.deepseek.com/v1', model: 'deepseek-chat' },
-        qwen: { url: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-max' },
-        kimi: { url: 'https://api.moonshot.cn/v1', model: 'moonshot-v1-8k' },
-        glm: { url: 'https://open.bigmodel.cn/api/paas/v4', model: 'glm-4' },
-        doubao: { url: 'https://ark.cn-beijing.volces.com/api/v3', model: 'ep-换成你的推理端点' },
+        qwen: { url: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen3-max' },
+        kimi: { url: 'https://api.moonshot.cn/v1', model: 'kimi-k2-0905-preview' },
+        glm: { url: 'https://open.bigmodel.cn/api/paas/v4', model: 'glm-4.6' },
+        doubao: { url: 'https://ark.cn-beijing.volces.com/api/v3', model: 'doubao-seed-1-6-251015' },
         hunyuan: { url: 'https://api.hunyuan.cloud.tencent.com/v1', model: 'hunyuan-standard' }
     };
 
