@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>国产大模型全能对话工具</title>
+    <title>国产大模型测试工具</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
@@ -95,7 +95,7 @@
 
                 <div class="flex items-center gap-2 py-1">
                     <input id="enableThinking" type="checkbox" checked class="w-4 h-4 text-blue-600">
-                    <label for="enableThinking" class="text-xs font-medium">显示思考过程 (R1可用)</label>
+                    <label for="enableThinking" class="text-xs font-medium">显示思考过程 (推理模型可用)</label>
                 </div>
             </div>
 
@@ -113,7 +113,7 @@
     <main class="flex-1 flex flex-col bg-white">
         <div id="chatHistory" class="chat-container overflow-y-auto p-6 space-y-6 flex-1 bg-white">
             <div class="flex justify-start">
-                <div class="bg-gray-100 px-4 py-2 rounded-2xl text-sm text-gray-600">请先在左侧完成配置，然后开始对话。支持上传 Word/TXT 文档和多张图片。</div>
+                <div class="bg-gray-100 px-4 py-2 rounded-2xl text-sm text-gray-600">麻烦先在左侧完成配置，然后开始对话。支持上传 Word/TXT 文档和多张图片，pdf不行。上下文轮数谨慎使用，token会超，而且很花钱。推理模型才能开推理，推理也很花钱。可以直接去用免费的。</div>
             </div>
         </div>
 
@@ -123,7 +123,7 @@
             <div class="max-w-4xl mx-auto">
                 <div class="flex items-center gap-4 mb-2">
                     <button onclick="document.getElementById('fileInput').click()" class="flex items-center gap-1 text-gray-500 hover:text-blue-600 text-xs font-bold transition">
-                        <span class="text-lg">📄</span> 文档
+                        <span class="text-lg">📄</span> word/txt文档
                     </button>
                     <button onclick="document.getElementById('imageInput').click()" class="flex items-center gap-1 text-gray-500 hover:text-blue-600 text-xs font-bold transition">
                         <span class="text-lg">🖼️</span> 图片
