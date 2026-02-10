@@ -5,17 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LAIN QUOTES // 1998</title>
     <style>
-        /* 90s LOW-FI STYLE */
+        /* 90s LOW-FI STYLE - MINIMAL */
         body {
             margin: 0;
             padding: 20px;
             background-color: #000000;
-            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAIAAACRXR/mAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAIGNIUk0AAHolAACAgwAA+f8AAIDpAAB1MAAA6mAAADqYAAAXb5JfxUYAAABnSURBVHja7M5BDQAACAIhNf//ekdBRkQo2rZ3ZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZm/wZuAAGTK/9lCQAAAABJRU5ErkJggg==');
+            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAIAAACRXR/mAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAIGNIUk0AAHolAACAgwAA+f8AAIDpAAB1MAAA6mAAADqYAAAXb5JfxUYAAABnSURBVHja7M5BDQAACAIhNf//ekdBRkQo2rZ3ZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZm/wZuAAGTK/9lCQAAAABJRU5ErkJggg==');
             color: #00ff00;
             font-family: "Courier New", Courier, monospace;
             font-size: 14px;
             line-height: 1.4;
             overflow-x: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            text-align: center;
         }
         
         /* CRT SCANLINES EFFECT */
@@ -53,19 +58,14 @@
             50% { opacity: 0; }
         }
         
-        /* CONTAINER - SIMPLE TABLE LAYOUT */
-        #container {
+        #content {
             max-width: 600px;
-            margin: 0 auto;
-            border: 2px solid #00ff00;
-            padding: 15px;
-            background-color: rgba(0, 30, 0, 0.7);
+            padding: 20px;
         }
         
         h1 {
-            text-align: center;
             color: #00ff00;
-            margin: 0 0 20px 0;
+            margin: 0 0 30px 0;
             font-size: 24px;
             text-transform: uppercase;
             letter-spacing: 2px;
@@ -73,28 +73,37 @@
         
         .lain-image {
             display: block;
-            margin: 0 auto 20px auto;
-            border: 1px solid #00aa00;
-            background-color: #001100;
-            max-width: 200px;
-            max-height: 200px;
+            margin: 0 auto 25px auto;
+            border: none;
+            background: transparent;
+            max-width: 240px;
+            max-height: 240px;
         }
         
         #quote-display {
             min-height: 60px;
-            padding: 10px;
-            border: 1px dashed #00aa00;
-            background-color: #000800;
-            margin-top: 15px;
+            padding: 15px;
+            background-color: rgba(0, 30, 0, 0.6);
+            margin-top: 20px;
             white-space: pre-wrap;
             word-wrap: break-word;
+            display: inline-block;
+            width: 100%;
+            box-sizing: border-box;
         }
         
         .status {
-            text-align: center;
-            margin-top: 15px;
+            margin-top: 25px;
             color: #00aa00;
             font-size: 12px;
+        }
+        
+        /* NO BORDERS OR BOXES */
+        * {
+            border: none !important;
+            outline: none !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
         }
         
         /* LINKS IN 90s STYLE */
@@ -106,17 +115,10 @@
         a:hover {
             color: #ff00ff;
         }
-        
-        /* NO MODERN TRANSITIONS OR ROUNDED CORNERS */
-        * {
-            transition: none !important;
-            border-radius: 0 !important;
-            box-shadow: none !important;
-        }
     </style>
 </head>
 <body>
-    <div id="container">
+    <div id="content">
         <h1>LAIN QUOTES <span class="cursor"></span></h1>
         
         <img class="lain-image" src="lain.gif" alt="LAIN" id="lain-gif">
