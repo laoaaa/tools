@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LAIN QUOTES // 1998</title>
+    <style>
+        /* 90s LOW-FI STYLE */
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #000000;
+            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAIAAACRXR/mAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAIGNIUk0AAHolAACAgwAA+f8AAIDpAAB1MAAA6mAAADqYAAAXb5JfxUYAAABnSURBVHja7M5BDQAACAIhNf//ekdBRkQo2rZ3ZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZm/wZuAAGTK/9lCQAAAABJRU5ErkJggg==');
+            color: #00ff00;
+            font-family: "Courier New", Courier, monospace;
+            font-size: 14px;
+            line-height: 1.4;
+            overflow-x: hidden;
+        }
+        
+        /* CRT SCANLINES EFFECT */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 255, 0, 0.03),
+                rgba(0, 255, 0, 0.03) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            z-index: 999;
+        }
+        
+        /* BLINKING CURSOR */
+        .cursor {
+            display: inline-block;
+            width: 8px;
+            height: 16px;
+            background-color: #00ff00;
+            animation: blink 1s infinite;
+            vertical-align: middle;
+            margin-left: 2px;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        
+        /* CONTAINER - SIMPLE TABLE LAYOUT */
+        #container {
+            max-width: 600px;
+            margin: 0 auto;
+            border: 2px solid #00ff00;
+            padding: 15px;
+            background-color: rgba(0, 30, 0, 0.7);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #00ff00;
+            margin: 0 0 20px 0;
+            font-size: 24px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        .lain-image {
+            display: block;
+            margin: 0 auto 20px auto;
+            border: 1px solid #00aa00;
+            background-color: #001100;
+            max-width: 200px;
+            max-height: 200px;
+        }
+        
+        #quote-display {
+            min-height: 60px;
+            padding: 10px;
+            border: 1px dashed #00aa00;
+            background-color: #000800;
+            margin-top: 15px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .status {
+            text-align: center;
+            margin-top: 15px;
+            color: #00aa00;
+            font-size: 12px;
+        }
+        
+        /* LINKS IN 90s STYLE */
+        a {
+            color: #00ffff;
+            text-decoration: underline;
+        }
+        
+        a:hover {
+            color: #ff00ff;
+        }
+        
+        /* NO MODERN TRANSITIONS OR ROUNDED CORNERS */
+        * {
+            transition: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <h1>LAIN QUOTES <span class="cursor"></span></h1>
+        
+        <img class="lain-image" src="lain.gif" alt="LAIN" id="lain-gif">
+        
+        <div id="quote-display">CLICK IMAGE TO RECEIVE TRANSMISSION...</div>
+        
+        <div class="status">NETWORK STATUS: ONLINE // WIRED CONNECTION ACTIVE</div>
+    </div>
+    
+    <audio id="background-audio" loop>
+        <source src="lain.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        const quotes = [
+            "I'm not here. I'm not anywhere.",
+            "Present day, present time... Lain.",
+            "Everyone has a shadow.",
+            "The network is not just wires and machines.",
+            "Do you know who I am?",
+            "Reality is what we make of it.",
+            "I exist in the Wired.",
+            "Communication is everything.",
+            "Am I real or am I virtual?",
+            "The world is connected through me.",
+            "Layer 1: The physical layer.",
+            "Layer 2: The data link layer.",
+            "Layer 3: The network layer.",
+            "Layer 4: The transport layer.",
+            "Layer 5: The session layer.",
+            "Layer 6: The presentation layer.",
+            "Layer 7: The application layer.",
+            "I am becoming one with the network.",
+            "Existence is communication.",
+            "Who are you when no one is watching?"
+        ];
+        
+        const lainGif = document.getElementById('lain-gif');
+        const quoteDisplay = document.getElementById('quote-display');
+        const backgroundAudio = document.getElementById('background-audio');
+        
+        let audioStarted = false;
+        function startAudio() {
+            if (!audioStarted) {
+                backgroundAudio.play().catch(e => console.log("Audio play failed:", e));
+                audioStarted = true;
+            }
+        }
+        
+        lainGif.addEventListener('click', () => {
+            startAudio();
+            
+            const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+            quoteDisplay.textContent = "> " + randomQuote;
+        });
+        
+        lainGif.addEventListener('mouseenter', startAudio);
+    </script>
+</body>
+</html>
