@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EPUB to Text Converter</title>
+    <script src="jszip.min.js"></script> <!-- Make sure jszip.min.js is available locally -->
+    <script src="epub.min.js"></script> <!-- Make sure epub.min.js is available locally -->
+</head>
+<body>
+    <h1>EPUB to Text Converter</h1>
+
+    <!-- Step 1: File Upload -->
+    <input type="file" id="fileInput" accept=".epub" />
+    <button onclick="convertToText()">Upload & Convert</button>
+
+    <!-- Loading Indicator -->
+    <div id="loading" style="display:none; color: blue; margin-top: 10px;">
+        Converting... Please wait.
+    </div>
+
+    <!-- Conversion Complete Message -->
+    <div id="status" style="display:none; color: green; margin-top: 10px;">
+        Conversion complete! Click below to download the text file.
+    </div>
+
+    <!-- Download Button -->
+    <button id="downloadBtn" style="display:none; margin-top: 10px;" onclick="downloadTextFile()">Download Text File</button>
+
+    <script>
+        let fullText = '';
+
+        async function convertToText() {
+            const fileInput = document.getElementById('fileInput');
+            if (!fileInput.files.length) {
+                alert('Please select an EPUB file!');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = async function(event) {
+                try {
+                    // Show loading indicator
+                    document.getElementById('loading').style.display = 'block';
+
+                    // Create ePub instance with ArrayBuffer data
+                    const epubData = event.target.result;
+                    const book = ePub(epubData);
+
+                    fullText = '';
+
+                    // Extract text from each chapter
+                    const spine = await book.loaded.spine;
+                    for (let item of spine.items) {
+                        const chapter = await item.load(book.archive);  // Load each chapter content
+
+                        // Use DOMParser to extract text content
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(chapter, "text/html");
+                        fullText += doc.body.innerText + '\n\n';
+                    }
+
+                    // Hide loading indicator and show completion message
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('status').style.display = 'block';
+                    document.getElementById('downloadBtn').style.display = 'inline-block';
+                } catch (error) {
+                    console.error("Error during EPUB parsing:", error);
+                    alert("Failed to convert EPUB file. Please check the console for details.");
+                    document.getElementById('loading').style.display = 'none';
+                }
+            };
+
+            reader.readAsArrayBuffer(file);  // Read file as ArrayBuffer
+        }
+
+        function downloadTextFile() {
+            if (!fullText) {
+                alert("No content to download. Please check the EPUB file.");
+                return;
+            }
+
+            // Download the converted file
+            const blob = new Blob([fullText], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'output.txt';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>校对王 Agent 模式 · Demo</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1420;
+    --panel: #161d2e;
+    --panel-2: #1c2438;
+    --border: #2a3450;
+    --text: #e6e9f2;
+    --text-dim: #9aa4c0;
+    --accent: #5b8cff;
+    --accent-2: #4ade80;
+    --warn: #fbbf24;
+    --danger: #f87171;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #eef1f8;
+    color: #1a2033;
+  }
+  header {
+    background: var(--bg);
+    color: var(--text);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--border);
+  }
+  header h1 {
+    font-size: 16px;
+    margin: 0;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  header .sub {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-right: 8px;
+  }
+  .cfg-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+    flex: 1;
+  }
+  .cfg-row input, .cfg-row select {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+  }
+  .cfg-row input[data-field="baseUrl"] { width: 220px; }
+  .cfg-row input[data-field="apiKey"] { width: 160px; }
+  .cfg-row input[data-field="model"] { width: 130px; }
+  .cfg-row input[data-field="concurrency"] { width: 50px; }
+  button {
+    cursor: pointer;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    background: var(--accent);
+    color: white;
+  }
+  button.secondary { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); }
+  button.small { padding: 4px 10px; font-size: 11px; }
+  button:disabled { opacity: 0.45; cursor: not-allowed; }
+  #connStatus { font-size: 12px; padding: 2px 8px; border-radius: 10px; }
+  #connStatus.idle { color: var(--text-dim); }
+  #connStatus.ok { background: rgba(74,222,128,.15); color: var(--accent-2); }
+  #connStatus.fail { background: rgba(248,113,113,.15); color: var(--danger); }
+
+  main {
+    display: grid;
+    grid-template-columns: minmax(360px, 460px) 1fr;
+    gap: 16px;
+    padding: 16px;
+    align-items: start;
+  }
+  .panel {
+    background: white;
+    border-radius: var(--radius);
+    border: 1px solid #dde2ef;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .panel-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid #eceef5;
+    font-weight: 600;
+    font-size: 13px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f7f8fc;
+  }
+  .panel-header .hint { font-weight: 400; color: #8b93a8; font-size: 11px; }
+
+  #chatPanel { height: calc(100vh - 100px); }
+  #chatBody {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .msg {
+    max-width: 88%;
+    padding: 10px 13px;
+    border-radius: 12px;
+    font-size: 13.5px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+  }
+  .msg.agent { background: #eef1fb; align-self: flex-start; border-bottom-left-radius: 3px; }
+  .msg.agent.stage { background: transparent; color: #9096ab; font-size: 12px; padding: 2px 4px; }
+  .msg.user { background: var(--accent); color: white; align-self: flex-end; border-bottom-right-radius: 3px; }
+  .msg.system { background: #fff7e6; color: #9a6b00; font-size: 12px; align-self: center; border-radius: 8px; }
+
+  .qcard {
+    border: 1px solid #dde2ef;
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-top: 4px;
+    background: #fff;
+  }
+  .qcard .qtext { font-size: 13px; margin-bottom: 8px; }
+  .qcard .qeffect { font-size: 11px; color: #8b93a8; margin-bottom: 8px; }
+  .qcard .qbtns { display: flex; gap: 8px; }
+  .qcard button.yn { flex: 1; }
+  .qcard button.yn.chosen-y { background: var(--accent-2); }
+  .qcard button.yn.chosen-n { background: #cbd2e6; color: #444; }
+  .qcard textarea {
+    width: 100%;
+    border: 1px solid #dde2ef;
+    border-radius: 6px;
+    padding: 6px 8px;
+    font-size: 12.5px;
+    resize: vertical;
+    min-height: 32px;
+    font-family: inherit;
+  }
+
+  #chatInputRow {
+    display: flex;
+    gap: 8px;
+    padding: 12px;
+    border-top: 1px solid #eceef5;
+  }
+  #chatInputRow input {
+    flex: 1;
+    border: 1px solid #dde2ef;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+
+  #uploadZone {
+    margin: 16px;
+    border: 2px dashed #c7cee6;
+    border-radius: 10px;
+    padding: 22px;
+    text-align: center;
+    color: #8b93a8;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  #uploadZone.drag { background: #f1f4ff; border-color: var(--accent); }
+  #uploadZone input { display: none; }
+
+  #chunkPreview { margin: 0 16px 16px; }
+  #chunkPreview summary { cursor: pointer; font-size: 12px; color: var(--accent); }
+  #chunkPreview pre { max-height: 220px; overflow: auto; background: #0f1420; color: #b9c2e0; padding: 10px; border-radius: 8px; font-size: 11px; }
+
+  #resultsPanel { display: flex; flex-direction: column; gap: 0; }
+  .stat-row { display: flex; gap: 12px; padding: 14px 16px; flex-wrap: wrap; }
+  .stat-card {
+    flex: 1;
+    min-width: 100px;
+    background: #f7f8fc;
+    border-radius: 8px;
+    padding: 10px 14px;
+    text-align: center;
+  }
+  .stat-card .num { font-size: 20px; font-weight: 700; }
+  .stat-card .lbl { font-size: 11px; color: #8b93a8; margin-top: 2px; }
+  .stat-card.high .num { color: #2563eb; }
+  .stat-card.doubt .num { color: var(--warn); }
+  .stat-card.dropped .num { color: var(--danger); }
+
+  #typeBar { padding: 0 16px 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .type-chip {
+    font-size: 11px;
+    padding: 3px 9px;
+    border-radius: 12px;
+    background: #eef1fb;
+    color: #445;
+    cursor: pointer;
+    border: 1px solid transparent;
+  }
+  .type-chip.active { background: var(--accent); color: white; }
+
+  #filterRow { padding: 0 16px 10px; display: flex; gap: 10px; align-items: center; font-size: 12px; }
+  #filterRow select { padding: 4px 8px; border-radius: 6px; border: 1px solid #dde2ef; }
+
+  table#resultsTable { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  table#resultsTable th {
+    text-align: left; position: sticky; top: 0; background: #f7f8fc;
+    padding: 8px 10px; border-bottom: 1px solid #eceef5; font-weight: 600; color: #556;
+  }
+  table#resultsTable td { padding: 8px 10px; border-bottom: 1px solid #f2f3f8; vertical-align: top; }
+  #resultsTableWrap { max-height: 46vh; overflow: auto; }
+  .old-text { color: var(--danger); text-decoration: line-through; }
+  .new-text { color: #16a34a; }
+  .badge { font-size: 10px; padding: 1px 6px; border-radius: 8px; }
+  .badge.high { background: #dbeafe; color: #1d4ed8; }
+  .badge.doubt { background: #fef3c7; color: #92400e; }
+  .badge.web { background: #fee2e2; color: #b91c1c; margin-left: 4px; }
+
+  #droppedPanel { margin: 0 16px 16px; }
+  #droppedPanel summary { cursor: pointer; font-size: 12.5px; font-weight: 600; color: #556; padding: 6px 0; }
+  .dropped-item { font-size: 12px; padding: 8px 10px; border-bottom: 1px solid #f2f3f8; }
+  .dropped-item .rule { color: var(--danger); font-weight: 600; }
+
+  #exportRow { padding: 14px 16px; display: flex; gap: 8px; border-top: 1px solid #eceef5; flex-wrap: wrap; }
+  #costBar { padding: 6px 16px; font-size: 11px; color: #8b93a8; border-top: 1px solid #eceef5; }
+
+  .empty-hint { padding: 40px 16px; text-align: center; color: #b3b9cc; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>校对王 · Agent 模式 Demo</h1>
+  <span class="sub">主动提问 · 分阶段自检 · 专项追问</span>
+  <div class="cfg-row">
+    <input data-field="baseUrl" placeholder="Base URL" value="https://api.deepseek.com/v1">
+    <input data-field="apiKey" type="password" placeholder="API Key (sk-...)">
+    <input data-field="model" placeholder="模型名" value="deepseek-chat">
+    并发<input data-field="concurrency" type="number" min="1" max="10" value="5">
+    <button class="secondary small" id="testConnBtn">测试连接</button>
+    <span id="connStatus" class="idle">未测试</span>
+  </div>
+</header>
+
+<main>
+  <section class="panel" id="chatPanel">
+    <div class="panel-header">对话流程 <span class="hint">画像 → 确认 → 执行播报 → 追问</span></div>
+    <div id="chatBody"></div>
+    <div id="chatInputRow">
+      <input id="chatInput" placeholder="上传文档后，这里可以发起追问 / 专项校对……" disabled>
+      <button id="chatSendBtn" disabled>发送</button>
+    </div>
+  </section>
+
+  <section style="display:flex; flex-direction:column; gap:16px;">
+    <div class="panel">
+      <div class="panel-header">
+        文档
+        <span class="hint">支持 .docx / .txt / .md，纯前端解析，不上传服务器</span>
+      </div>
+      <div id="uploadZone">
+        点击或拖拽文件到此处上传
+        <input type="file" id="fileInput" accept=".docx,.txt,.md">
+      </div>
+      <details id="chunkPreview" style="display:none;">
+        <summary>查看切分结果（chunk JSON，与生产链路结构一致）</summary>
+        <pre id="chunkPreviewContent"></pre>
+      </details>
+      <div id="promptPreviewWrap" style="margin:0 16px 16px; display:none;">
+        <button class="secondary small" id="showPromptsBtn">查看本轮实际提示词</button>
+      </div>
+    </div>
+
+    <div class="panel" id="resultsPanel">
+      <div class="panel-header">校对结果 <span class="hint" id="progressHint"></span></div>
+      <div id="resultsEmpty" class="empty-hint">上传文档并完成确认后，这里显示结果</div>
+      <div id="resultsBody" style="display:none;">
+        <div class="stat-row">
+          <div class="stat-card total"><div class="num" id="statTotal">0</div><div class="lbl">终审条目</div></div>
+          <div class="stat-card high"><div class="num" id="statHigh">0</div><div class="lbl">high 确信</div></div>
+          <div class="stat-card doubt"><div class="num" id="statDoubt">0</div><div class="lbl">doubt 存疑</div></div>
+          <div class="stat-card dropped"><div class="num" id="statDropped">0</div><div class="lbl">已剔除(噪声)</div></div>
+        </div>
+        <div id="typeBar"></div>
+        <div id="filterRow">
+          <label>裁决档位
+            <select id="filterV"><option value="">全部</option><option value="high">high</option><option value="doubt">doubt</option></select>
+          </label>
+          <label>路由
+            <select id="filterRoute"><option value="">全部</option><option value="pass">pass</option><option value="web">待联网核查</option></select>
+          </label>
+        </div>
+        <div id="resultsTableWrap">
+          <table id="resultsTable">
+            <thead><tr><th>原句</th><th>错处 → 改正</th><th>类型</th><th>说明</th><th>来源/档位</th></tr></thead>
+            <tbody id="resultsTbody"></tbody>
+          </table>
+        </div>
+        <details id="droppedPanel">
+          <summary>剔除的疑似误报（<span id="droppedCount">0</span> 条，含举证）</summary>
+          <div id="droppedList"></div>
+        </details>
+        <div id="costBar"></div>
+        <div id="exportRow">
+          <button class="secondary" id="exportJsonBtn">导出结果 JSON</button>
+          <button class="secondary" id="exportCsvBtn">导出 CSV</button>
+          <button class="secondary" id="exportLogBtn">导出提示词与请求日志</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="promptModalBg" style="display:none; position:fixed; inset:0; background:rgba(10,14,25,.6); z-index:50; align-items:center; justify-content:center;">
+  <div style="background:white; width:min(760px,90vw); max-height:80vh; border-radius:10px; overflow:hidden; display:flex; flex-direction:column;">
+    <div style="padding:12px 16px; border-bottom:1px solid #eceef5; display:flex; justify-content:space-between; align-items:center;">
+      <strong style="font-size:13px;">本轮实际提示词（含责编确认后追加的定制段）</strong>
+      <button class="secondary small" id="closePromptModal">关闭</button>
+    </div>
+    <div style="padding:12px 16px; overflow:auto;">
+      <div style="font-size:12px; color:#8b93a8; margin-bottom:4px;">查全提示词（追加定制段后）</div>
+      <pre id="promptModalSearch" style="background:#0f1420;color:#b9c2e0;padding:10px;border-radius:8px;font-size:11px; white-space:pre-wrap;"></pre>
+      <div style="font-size:12px; color:#8b93a8; margin:10px 0 4px;">政务提示词（追加定制段后）</div>
+      <pre id="promptModalGov" style="background:#0f1420;color:#b9c2e0;padding:10px;border-radius:8px;font-size:11px; white-space:pre-wrap;"></pre>
+      <div style="font-size:12px; color:#8b93a8; margin:10px 0 4px;">监督提示词（结构固定，占位符按 chunk 填充）</div>
+      <pre id="promptModalSup" style="background:#0f1420;color:#b9c2e0;padding:10px;border-radius:8px;font-size:11px; white-space:pre-wrap;"></pre>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import {
+  fingerprint, splitSentences, buildChunks, safeParseJSON, isEmptyResult,
+  sampleParagraphs, computeStats, extractNameCandidates, clusterNameVariants,
+  LLMClient, runPool, compileInstructions, buildRunPrompts, processChunk,
+  mergeChunkResults, flattenEntries, estimateCost, parseDocxFile, parsePlainTextFile,
+} from "./app.js";
+import { PROFILE_PROMPT, FALLBACK_QUESTIONS, STAGE_MESSAGES } from "./prompts.js";
+
+// ---------------------------------------------------------------- 状态
+const state = {
+  paragraphs: null,
+  chunks: null,
+  profile: null,
+  answers: {},
+  merged: null,
+  usageTotal: { prompt_tokens: 0, completion_tokens: 0 },
+  runPrompts: null,
+  log: [],
+  awaitingAnswers: false,
+};
+
+function getConfig() {
+  return {
+    baseUrl: document.querySelector('[data-field="baseUrl"]').value.trim(),
+    apiKey: document.querySelector('[data-field="apiKey"]').value.trim(),
+    model: document.querySelector('[data-field="model"]').value.trim(),
+    concurrency: Math.max(1, parseInt(document.querySelector('[data-field="concurrency"]').value, 10) || 5),
+  };
+}
+
+// sessionStorage 记忆（不落盘 localStorage；关闭标签页即失效）
+(function restoreCfg() {
+  try {
+    const saved = JSON.parse(sessionStorage.getItem("proofdemo_cfg") || "{}");
+    if (saved.baseUrl) document.querySelector('[data-field="baseUrl"]').value = saved.baseUrl;
+    if (saved.model) document.querySelector('[data-field="model"]').value = saved.model;
+  } catch (e) { /* ignore */ }
+})();
+document.querySelectorAll(".cfg-row input").forEach((el) => {
+  el.addEventListener("change", () => {
+    try {
+      const cfg = getConfig();
+      sessionStorage.setItem("proofdemo_cfg", JSON.stringify({ baseUrl: cfg.baseUrl, model: cfg.model }));
+    } catch (e) { /* 隐私模式下 sessionStorage 可能不可用，静默忽略 */ }
+  });
+});
+
+// ---------------------------------------------------------------- 聊天区渲染
+const chatBody = document.getElementById("chatBody");
+function appendMsg(role, text, opts = {}) {
+  const div = document.createElement("div");
+  div.className = `msg ${role}${opts.stage ? " stage" : ""}`;
+  div.textContent = text;
+  chatBody.appendChild(div);
+  chatBody.scrollTop = chatBody.scrollHeight;
+  return div;
+}
+function appendStageLine(text) {
+  return appendMsg("agent", text, { stage: true });
+}
+
+async function typeAgentMsg(text, delay = 300) {
+  await new Promise((r) => setTimeout(r, delay));
+  appendMsg("agent", text);
+}
+
+// ---------------------------------------------------------------- 连接测试
+document.getElementById("testConnBtn").addEventListener("click", async () => {
+  const statusEl = document.getElementById("connStatus");
+  const cfg = getConfig();
+  if (!cfg.apiKey) { statusEl.textContent = "请先填写 API Key"; statusEl.className = "fail"; return; }
+  statusEl.textContent = "测试中…"; statusEl.className = "idle";
+  try {
+    const client = new LLMClient(cfg);
+    const r = await client.chat([{ role: "user", content: "ping，只回复pong" }], { temperature: 0 });
+    statusEl.textContent = "连接成功 ✓"; statusEl.className = "ok";
+    console.log("[测试连接] 响应：", r.content);
+  } catch (e) {
+    statusEl.textContent = "失败：" + (e.message || e).toString().slice(0, 60);
+    statusEl.className = "fail";
+    appendMsg("system", "连接测试失败：" + e.message + "\n若浏览器控制台显示 CORS 相关报错，说明 DeepSeek 不支持从当前域名直连，请参考 README 里的代理方案，或打开 cors-test.html 单独排查。");
+  }
+});
+
+// ---------------------------------------------------------------- 文件上传
+const uploadZone = document.getElementById("uploadZone");
+const fileInput = document.getElementById("fileInput");
+uploadZone.addEventListener("click", () => fileInput.click());
+uploadZone.addEventListener("dragover", (e) => { e.preventDefault(); uploadZone.classList.add("drag"); });
+uploadZone.addEventListener("dragleave", () => uploadZone.classList.remove("drag"));
+uploadZone.addEventListener("drop", (e) => {
+  e.preventDefault();
+  uploadZone.classList.remove("drag");
+  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener("change", () => { if (fileInput.files[0]) handleFile(fileInput.files[0]); });
+
+async function handleFile(file) {
+  const cfg = getConfig();
+  if (!cfg.apiKey) {
+    appendMsg("system", "请先在顶部填写 API Key 再上传文档（画像分析需要真实调用一次模型）。");
+    return;
+  }
+  appendMsg("user", `[上传文件] ${file.name}`);
+  await typeAgentMsg("黄老师好，文档已在读取中……", 200);
+
+  let paragraphs;
+  try {
+    if (/\.docx$/i.test(file.name)) {
+      paragraphs = await parseDocxFile(file);
+    } else {
+      const text = await file.text();
+      paragraphs = parsePlainTextFile(text);
+    }
+  } catch (e) {
+    appendMsg("system", "文档解析失败：" + e.message);
+    return;
+  }
+  if (paragraphs.length === 0) {
+    appendMsg("system", "未解析出正文内容，请确认文件不是空文档或扫描件。");
+    return;
+  }
+
+  state.paragraphs = paragraphs;
+  state.chunks = buildChunks(paragraphs, 1000);
+
+  document.getElementById("chunkPreview").style.display = "block";
+  document.getElementById("chunkPreviewContent").textContent =
+    `共 ${paragraphs.length} 段，切成 ${state.chunks.length} 个 chunk（目标≈1000字/chunk，段落边界收口）\n\n` +
+    JSON.stringify(state.chunks[0], null, 2) + (state.chunks.length > 1 ? "\n\n……（其余 " + (state.chunks.length - 1) + " 个 chunk 省略）" : "");
+
+  await runProfileStage();
+}
+
+// ---------------------------------------------------------------- 画像与提问阶段
+async function runProfileStage() {
+  const cfg = getConfig();
+  const client = new LLMClient(cfg);
+  const stats = computeStats(state.paragraphs);
+  const samples = sampleParagraphs(state.paragraphs, 400);
+
+  const userPrompt = [
+    "## 抽样片段",
+    "### 首段", samples.head || "(无)",
+    "### 中段", samples.mid || "(无)",
+    "### 尾段", samples.tail || "(无)",
+    "",
+    "## 统计数据",
+    JSON.stringify(stats, null, 2),
+  ].join("\n");
+
+  let profile;
+  try {
+    const r = await client.chatWithRetry([
+      { role: "system", content: PROFILE_PROMPT },
+      { role: "user", content: userPrompt },
+    ]);
+    const parsed = safeParseJSON(r.content);
+    if (parsed.__parseError || !Array.isArray(parsed.questions) || parsed.questions.length === 0) {
+      throw new Error("画像结果解析失败或无有效问题");
+    }
+    profile = parsed;
+    state.usageTotal.prompt_tokens += r.usage.prompt_tokens || 0;
+    state.usageTotal.completion_tokens += r.usage.completion_tokens || 0;
+  } catch (e) {
+    appendMsg("system", "画像分析失败（" + e.message + "），已回退到固定确认问题。");
+    profile = { genre: "未知（画像失败，使用通用策略）", basis: "", focus: ["输入错误", "内容风险"], questions: FALLBACK_QUESTIONS };
+  }
+
+  state.profile = profile;
+  await typeAgentMsg(`黄老师，文档已读取，根据我的分析，这是一本${profile.genre || "待判断类型的"}书${profile.basis ? "（" + profile.basis + "）" : ""}，请确认下面几个问题，我会据此调整校对策略：`, 300);
+
+  state.awaitingAnswers = true;
+  askNextQuestion(0);
+}
+
+function askNextQuestion(idx) {
+  const questions = state.profile.questions;
+  if (idx >= questions.length) {
+    finishQuestionsAndRun();
+    return;
+  }
+  const q = questions[idx];
+  const wrap = document.createElement("div");
+  wrap.className = "msg agent";
+  wrap.style.padding = "0";
+  wrap.style.background = "transparent";
+
+  const card = document.createElement("div");
+  card.className = "qcard";
+  const qtext = document.createElement("div");
+  qtext.className = "qtext";
+  qtext.textContent = q.text + (q.id === "extra" ? "" : "，请确认 Y/N");
+  card.appendChild(qtext);
+
+  if (q.effect) {
+    const eff = document.createElement("div");
+    eff.className = "qeffect";
+    eff.textContent = "影响：" + q.effect;
+    card.appendChild(eff);
+  }
+
+  if (q.id === "extra") {
+    const ta = document.createElement("textarea");
+    ta.placeholder = "如有其他要求请填写，没有则直接点击「没有了，开始校对」";
+    card.appendChild(ta);
+    const btnRow = document.createElement("div");
+    btnRow.className = "qbtns";
+    btnRow.style.marginTop = "8px";
+    const btn = document.createElement("button");
+    btn.textContent = "没有了，开始校对";
+    btn.className = "yn";
+    btn.addEventListener("click", () => {
+      state.answers[q.id] = ta.value.trim();
+      appendMsg("user", ta.value.trim() ? ta.value.trim() : "没有其他要求了，开始校对吧");
+      card.remove();
+      askNextQuestion(idx + 1);
+    });
+    btnRow.appendChild(btn);
+    card.appendChild(btnRow);
+  } else {
+    const btnRow = document.createElement("div");
+    btnRow.className = "qbtns";
+    const yBtn = document.createElement("button");
+    yBtn.className = "yn"; yBtn.textContent = "Y 确认";
+    const nBtn = document.createElement("button");
+    nBtn.className = "yn secondary"; nBtn.textContent = "N 不需要";
+    yBtn.addEventListener("click", () => {
+      state.answers[q.id] = "Y";
+      appendMsg("user", "Y");
+      card.remove();
+      askNextQuestion(idx + 1);
+    });
+    nBtn.addEventListener("click", () => {
+      state.answers[q.id] = "N";
+      appendMsg("user", "N");
+      card.remove();
+      askNextQuestion(idx + 1);
+    });
+    btnRow.appendChild(yBtn);
+    btnRow.appendChild(nBtn);
+    card.appendChild(btnRow);
+  }
+
+  wrap.appendChild(card);
+  chatBody.appendChild(wrap);
+  chatBody.scrollTop = chatBody.scrollHeight;
+}
+
+async function finishQuestionsAndRun() {
+  state.awaitingAnswers = false;
+  state.runPrompts = buildRunPrompts(state.answers, state.profile);
+  document.getElementById("promptPreviewWrap").style.display = "block";
+
+  await typeAgentMsg("好的，收到，这一轮校对配置已确定，开始处理全文……", 300);
+  await runExecutionStage();
+}
+
+// ---------------------------------------------------------------- 执行阶段
+async function runExecutionStage() {
+  const cfg = getConfig();
+  const client = new LLMClient(cfg);
+  const { searchPrompt, govPrompt, supervisorPrompt } = state.runPrompts;
+
+  document.getElementById("progressHint").textContent = `0 / ${state.chunks.length} chunk`;
+  const stageLineByChunk = new Map();
+  let stageMsgIdx = { initial: 0, verify: 0 };
+  const stageTicker = setInterval(() => {
+    const activeStage = document.querySelector(".msg.stage.active");
+  }, 400);
+  clearInterval(stageTicker);
+
+  let lastLine = null;
+  function onStage(chunkId, stage) {
+    const pool = STAGE_MESSAGES[stage];
+    const text = pool[stageMsgIdx[stage] % pool.length] + `（chunk ${chunkId}）`;
+    stageMsgIdx[stage]++;
+    if (lastLine) lastLine.remove();
+    lastLine = appendStageLine(text);
+  }
+
+  let doneCount = 0;
+  const results = await runPool(state.chunks, async (chunk) => {
+    const r = await processChunk(chunk, { client, searchPrompt, govPrompt, supervisorPrompt }, { onStage });
+    state.log.push({ chunkId: chunk.chunkId, raw: r.raw });
+    state.usageTotal.prompt_tokens += r.usage.prompt_tokens || 0;
+    state.usageTotal.completion_tokens += r.usage.completion_tokens || 0;
+    doneCount++;
+    document.getElementById("progressHint").textContent = `${doneCount} / ${state.chunks.length} chunk`;
+    return r;
+  }, cfg.concurrency);
+
+  if (lastLine) lastLine.remove();
+
+  const merged = mergeChunkResults(results);
+
+  if (state.answers.names === "Y") {
+    await runNameConsistencyPass(merged, client);
+  }
+
+  state.merged = merged;
+  renderResults(merged);
+
+  const total = flattenEntries(merged).length;
+  await typeAgentMsg(`本次校对共检出 ${total} 项问题，其中 ${merged.dropped.length} 项经复核判定为误报已剔除${merged.failedChunks.length ? `，另有 ${merged.failedChunks.length} 个 chunk 处理失败，可在结果区查看` : ""}。`, 300);
+  await typeAgentMsg("如果需要针对某类问题做专项检查（比如只看内容风险、只看人名一致性），可以直接在下面输入框里跟我说。", 400);
+
+  document.getElementById("chatInput").disabled = false;
+  document.getElementById("chatSendBtn").disabled = false;
+}
+
+// 跨 chunk 人名一致性：聚类候选 -> 送一次 LLM 裁定 -> 并入结果
+async function runNameConsistencyPass(merged, client) {
+  const fullText = state.paragraphs.join("");
+  const candidates = extractNameCandidates(fullText);
+  const groups = clusterNameVariants(candidates);
+  if (groups.length === 0) return;
+
+  appendStageLine("正在检查前后文一致性问题（人名专项）……");
+  const prompt = `以下是从同一份书稿中提取的疑似同一人物的不同写法分组（编辑距离<=1，可能是真实的人名不统一，也可能是不同人物碰巧形近）。请逐组判断是否为同一人物的不一致写法，如果是，给出应统一为哪种写法的建议；如果不是（确属不同人物），请忽略该组。只输出JSON数组，每个元素：{"variants":["写法1","写法2"],"isInconsistency":true/false,"suggestion":"建议统一为的写法","reason":"判断依据"}。\n\n分组数据：\n${JSON.stringify(groups.map(g => g.map(x => ({ name: x.name, count: x.count }))))}`;
+
+  try {
+    const r = await client.chatWithRetry([
+      { role: "system", content: "你是资深出版物校对专家，专注于人名一致性判定。只输出合法JSON数组，不输出其他内容。" },
+      { role: "user", content: prompt },
+    ]);
+    const parsed = safeParseJSON(r.content);
+    const arr = Array.isArray(parsed) ? parsed : (parsed.__parseError ? [] : []);
+    const inconsistent = arr.filter((x) => x.isInconsistency);
+    if (inconsistent.length > 0) {
+      merged.p.push({
+        c: 0, fp: "跨chunk", __chunkId: "全文",
+        s: inconsistent.map((x, i) => ({
+          n: i + 1,
+          t: `全文出现写法：${x.variants.join("、")}`,
+          old: x.variants.join("/"),
+          new: x.suggestion || "",
+          type: "前后文一致性问题",
+          reason: x.reason || "同一人物存在多种写法",
+          src: "人名专项",
+          v: "doubt",
+          route: "pass",
+        })),
+      });
+    }
+    state.usageTotal.prompt_tokens += r.usage.prompt_tokens || 0;
+    state.usageTotal.completion_tokens += r.usage.completion_tokens || 0;
+  } catch (e) {
+    console.warn("人名一致性专项失败：", e.message);
+  }
+}
+
+// ---------------------------------------------------------------- 结果渲染
+let activeTypeFilter = null;
+function renderResults(merged) {
+  document.getElementById("resultsEmpty").style.display = "none";
+  document.getElementById("resultsBody").style.display = "block";
+
+  const rows = flattenEntries(merged);
+  document.getElementById("statTotal").textContent = rows.length;
+  document.getElementById("statHigh").textContent = rows.filter((r) => r.v === "high").length;
+  document.getElementById("statDoubt").textContent = rows.filter((r) => r.v === "doubt").length;
+  document.getElementById("statDropped").textContent = merged.dropped.length;
+
+  const typeCounts = new Map();
+  rows.forEach((r) => typeCounts.set(r.type || "未分类", (typeCounts.get(r.type || "未分类") || 0) + 1));
+  const typeBar = document.getElementById("typeBar");
+  typeBar.innerHTML = "";
+  const allChip = document.createElement("span");
+  allChip.className = "type-chip" + (activeTypeFilter === null ? " active" : "");
+  allChip.textContent = `全部 ${rows.length}`;
+  allChip.addEventListener("click", () => { activeTypeFilter = null; renderTable(rows); refreshChips(); });
+  typeBar.appendChild(allChip);
+  [...typeCounts.entries()].sort((a, b) => b[1] - a[1]).forEach(([type, count]) => {
+    const chip = document.createElement("span");
+    chip.className = "type-chip" + (activeTypeFilter === type ? " active" : "");
+    chip.textContent = `${type} ${count}`;
+    chip.addEventListener("click", () => { activeTypeFilter = type; renderTable(rows); refreshChips(); });
+    typeBar.appendChild(chip);
+  });
+  function refreshChips() {
+    [...typeBar.children].forEach((c) => c.classList.remove("active"));
+    if (activeTypeFilter === null) allChip.classList.add("active");
+    else [...typeBar.children].find((c) => c.textContent.startsWith(activeTypeFilter))?.classList.add("active");
+  }
+
+  document.getElementById("filterV").onchange = () => renderTable(rows);
+  document.getElementById("filterRoute").onchange = () => renderTable(rows);
+
+  renderTable(rows);
+
+  // dropped
+  document.getElementById("droppedCount").textContent = merged.dropped.length;
+  const droppedList = document.getElementById("droppedList");
+  droppedList.innerHTML = "";
+  merged.dropped.forEach((d) => {
+    const div = document.createElement("div");
+    div.className = "dropped-item";
+    div.innerHTML = `<span class="rule">[${d.rule || "?"}]</span> "${escapeHtml(d.t || "")}" — 错处「${escapeHtml(d.old || "")}」（${escapeHtml(d.src || "")}报出）<br><span style="color:#8b93a8;">举证：${escapeHtml(d.ev || "无")}</span>`;
+    droppedList.appendChild(div);
+  });
+
+  document.getElementById("costBar").textContent =
+    `累计 tokens：prompt ${state.usageTotal.prompt_tokens} / completion ${state.usageTotal.completion_tokens}，预估费用 ¥${estimateCost(state.usageTotal)}（按占位单价估算，仅供演示参考，请对照实际账户价格）`;
+}
+
+function renderTable(rows) {
+  const vFilter = document.getElementById("filterV").value;
+  const routeFilter = document.getElementById("filterRoute").value;
+  const filtered = rows.filter((r) => {
+    if (activeTypeFilter && (r.type || "未分类") !== activeTypeFilter) return false;
+    if (vFilter && r.v !== vFilter) return false;
+    if (routeFilter && r.route !== routeFilter) return false;
+    return true;
+  });
+  const tbody = document.getElementById("resultsTbody");
+  tbody.innerHTML = "";
+  filtered.forEach((r) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${escapeHtml(r.t || "")}</td>
+      <td><span class="old-text">${escapeHtml(r.old || "")}</span> → <span class="new-text">${escapeHtml(r.new || "(无建议)")}</span></td>
+      <td>${escapeHtml(r.type || "")}</td>
+      <td>${escapeHtml(r.reason || "")}</td>
+      <td>
+        ${escapeHtml(r.src || "")}
+        <span class="badge ${r.v === "high" ? "high" : "doubt"}">${r.v || "-"}</span>
+        ${r.route === "web" ? '<span class="badge web">待联网核查</span>' : ""}
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+// ---------------------------------------------------------------- 提示词预览弹窗
+document.getElementById("showPromptsBtn").addEventListener("click", () => {
+  document.getElementById("promptModalSearch").textContent = state.runPrompts.searchPrompt;
+  document.getElementById("promptModalGov").textContent = state.runPrompts.govPrompt;
+  document.getElementById("promptModalSup").textContent = state.runPrompts.supervisorPrompt;
+  document.getElementById("promptModalBg").style.display = "flex";
+});
+document.getElementById("closePromptModal").addEventListener("click", () => {
+  document.getElementById("promptModalBg").style.display = "none";
+});
+
+// ---------------------------------------------------------------- 追问轮次
+document.getElementById("chatSendBtn").addEventListener("click", sendFollowUp);
+document.getElementById("chatInput").addEventListener("keydown", (e) => { if (e.key === "Enter") sendFollowUp(); });
+
+async function sendFollowUp() {
+  const input = document.getElementById("chatInput");
+  const text = input.value.trim();
+  if (!text || !state.chunks) return;
+  appendMsg("user", text);
+  input.value = "";
+  input.disabled = true;
+  document.getElementById("chatSendBtn").disabled = true;
+
+  await typeAgentMsg("收到，这是一轮专项检查，我会复用已切分好的正文重新跑一遍，请稍等……", 200);
+
+  const cfg = getConfig();
+  const client = new LLMClient(cfg);
+  const customBlock = `\n\n# 本轮任务定制（专项追问，优先级最高）\n- 责编本轮追加要求：${text}\n- 请仅围绕该要求进行检查与反馈，其余类型可从简。`;
+  const searchPrompt = state.runPrompts.searchPrompt + customBlock;
+  const govPrompt = state.runPrompts.govPrompt + customBlock;
+  const supervisorPrompt = state.runPrompts.supervisorPrompt;
+
+  let lastLine = null;
+  function onStage(chunkId, stage) {
+    if (lastLine) lastLine.remove();
+    lastLine = appendStageLine(`（专项）${stage === "initial" ? "正在检查" : "正在核验"}「${text}」……chunk ${chunkId}`);
+  }
+
+  const results = await runPool(state.chunks, (chunk) =>
+    processChunk(chunk, { client, searchPrompt, govPrompt, supervisorPrompt }, { onStage }),
+    cfg.concurrency
+  );
+  if (lastLine) lastLine.remove();
+
+  const merged = mergeChunkResults(results);
+  state.merged = merged;
+  renderResults(merged);
+
+  const total = flattenEntries(merged).length;
+  await typeAgentMsg(`专项检查完成，本轮共检出 ${total} 项问题。还有其他要求可以继续跟我说。`, 200);
+
+  input.disabled = false;
+  document.getElementById("chatSendBtn").disabled = false;
+  input.focus();
+}
+
+// ---------------------------------------------------------------- 导出
+document.getElementById("exportJsonBtn").addEventListener("click", () => {
+  downloadFile("校对结果.json", JSON.stringify(state.merged, null, 2), "application/json");
+});
+document.getElementById("exportCsvBtn").addEventListener("click", () => {
+  const rows = flattenEntries(state.merged);
+  const header = ["原句", "错处", "改正", "类型", "说明", "来源", "档位", "路由"];
+  const csvRows = [header.join(",")];
+  rows.forEach((r) => {
+    csvRows.push([r.t, r.old, r.new, r.type, r.reason, r.src, r.v, r.route].map(csvEscape).join(","));
+  });
+  downloadFile("校对结果.csv", "﻿" + csvRows.join("\n"), "text/csv");
+});
+document.getElementById("exportLogBtn").addEventListener("click", () => {
+  const content = [
+    "=== 查全提示词（本轮实际，含定制段） ===",
+    state.runPrompts?.searchPrompt || "",
+    "\n=== 政务提示词（本轮实际，含定制段） ===",
+    state.runPrompts?.govPrompt || "",
+    "\n=== 监督提示词 ===",
+    state.runPrompts?.supervisorPrompt || "",
+    "\n=== 各 chunk 原始请求/响应日志 ===",
+    JSON.stringify(state.log, null, 2),
+  ].join("\n");
+  downloadFile("提示词与日志.txt", content, "text/plain");
+});
+function csvEscape(v) {
+  const s = (v ?? "").toString().replace(/"/g, '""');
+  return `"${s}"`;
+}
+function downloadFile(name, content, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>

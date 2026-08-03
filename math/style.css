@@ -1,0 +1,187 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+
+body {
+    background-color: #f5f7fa;
+    color: #333;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 900px;
+    margin: 30px auto;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 30px;
+    color: #2c3e50;
+}
+
+h2 {
+    margin: 20px 0;
+    color: #2c3e50;
+}
+
+.api-key-section {
+    margin-bottom: 30px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.api-key-section input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.thinking-option {
+    margin-top: 15px;
+    margin-bottom: 20px;
+}
+
+.thinking-option input[type="checkbox"] {
+    margin-right: 5px;
+    vertical-align: middle;
+}
+
+.thinking-option label {
+    vertical-align: middle;
+}
+
+.api-key-section button, 
+.upload-button, 
+#analyze-button {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.api-key-section button:hover, 
+.upload-button:hover, 
+#analyze-button:hover {
+    background-color: #2980b9;
+}
+
+.upload-section {
+    margin-bottom: 30px;
+}
+
+#drop-area {
+    border: 2px dashed #3498db;
+    border-radius: 10px;
+    padding: 40px;
+    text-align: center;
+    transition: border-color 0.3s;
+    background-color: #f8fafc;
+}
+
+#drop-area.highlight {
+    border-color: #2980b9;
+    background-color: #ecf0f1;
+}
+
+#drop-area p {
+    margin-bottom: 15px;
+    color: #7f8c8d;
+}
+
+.upload-button {
+    display: inline-block;
+    margin-top: 10px;
+}
+
+#preview-container {
+    margin-top: 20px;
+    text-align: center;
+}
+
+#preview-image {
+    max-width: 100%;
+    max-height: 400px;
+    border-radius: 5px;
+    margin-bottom: 15px;
+}
+
+#analyze-button {
+    margin-top: 10px;
+}
+
+#result-section {
+    padding: 20px;
+    background-color: #f8fafc;
+    border-radius: 10px;
+    border: 1px solid #e3e8ee;
+}
+
+#result-content {
+    white-space: pre-wrap;
+    line-height: 1.8;
+    padding: 15px;
+    background-color: #fff;
+    border-radius: 5px;
+    border: 1px solid #e3e8ee;
+}
+
+.hidden {
+    display: none;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    margin: 20px auto;
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    border-radius: 50%;
+    border-top-color: #3498db;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+#loading {
+    text-align: center;
+    margin: 20px 0;
+}
+
+/* LaTeX 公式样式 */
+.katex {
+    font-size: 1.1em;
+}
+
+.math-block {
+    margin: 15px 0;
+    overflow-x: auto;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border-radius: 5px;
+}
+
+.solution-step {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.solution-step:last-child {
+    border-bottom: none;
+}
